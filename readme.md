@@ -47,3 +47,7 @@ Diaspora Logger is a library for logging and processing events to Diaspora Strea
 
 
 
+## Communication Flows
+
+![A](https://drive.google.com/uc?export=view&id=1wnMFkcafBF5xqCz_tJtf2isAvkT25Hkf)
+
