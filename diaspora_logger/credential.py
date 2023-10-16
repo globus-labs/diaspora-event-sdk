@@ -85,8 +85,9 @@ def request_token_workflow():
     authorization_code = input("Paste the authorization code here: ").strip()
     token = request_token(authorization_code, code_verifier)
     if token:
+        access_token = token['other_tokens'][0]['access_token']
         refresh_token = token['other_tokens'][0]['refresh_token']
-        print("\n***")
+        print("***")
         print("For Python clients (e.g., example_producer.py and example_consumer.py):")
         print(f"export DIASPORA_REFRESH={refresh_token}")
         print("***")
@@ -95,6 +96,8 @@ def request_token_workflow():
         preferred_username = payload['preferred_username'].split("@")[0]
         print("credential subject claim:", payload['sub'])
         print("credential subject username:", preferred_username)
+        print("credential access token:", access_token, "(expires in two days)")
+        print("credential refresh token:", refresh_token, "(expires in six months of inactivity)")
 
         # print("For Java clients (kafka-oauth2-0.0.x.jar):")
         # print(f"save to {preferred_username}.properties")

@@ -7,7 +7,9 @@ Diaspora Logger is a library for logging and processing events to Diaspora Strea
 1. **Generate Globus Auth Refresh Token:**
     Run `credentials.py` to generate a Globus Auth refresh token.
     ```bash
-    python credentials.py
+    from diaspora_logger import request_token_workflow
+
+    request_token_workflow()
     ```
     Here's an example run:
     ```
@@ -19,9 +21,11 @@ Diaspora Logger is a library for logging and processing events to Diaspora Strea
     ***
     Credential subject claim: <subject-claim>
     Credential subject username: <subject-username>
+    credential access token: <access-token> (expires in two days)
+    credential refresh token: <refresh-token> (expires in six months of inactivity)
     ```
 
-    If it's your first time using the topic, call `claim_topics(<subject-claim>)` to claim all topics that are prefixed with the user's subject claim.
+    If it's your first time producing to a topic, use [our ACL endppoint](http://52.200.217.146:9090/acl) to claim one or more topics.
 
 
 2. **Export Credential:**
@@ -34,7 +38,7 @@ Diaspora Logger is a library for logging and processing events to Diaspora Strea
     Set the `topic` variable to your producer topic, then call `run_producer_example()` to start the producer.
     ```python
     topic = "<producer-topic>"
-    run_producer_example()
+    run_producer_example(topic)
     ```
 
 4. **Running Consumer:**
@@ -45,7 +49,8 @@ Diaspora Logger is a library for logging and processing events to Diaspora Strea
     run_consumer_example(topic, group_id)
     ```
 
-
+## Public ACL endpoint
+TODO
 
 ## Communication Flows
 

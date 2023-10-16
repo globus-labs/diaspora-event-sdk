@@ -6,10 +6,10 @@ from kafka import KafkaProducer
 from kafka.oauth.abstract import AbstractTokenProvider
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s:%(name)s:%(message)s'
-)
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format='%(asctime)s %(levelname)s:%(name)s:%(message)s'
+# )
 
 # Create a named logger
 logger = logging.getLogger('diaspora')
