@@ -1,0 +1,9 @@
+name: diaspora_logger_env
+channels:
+  - defaults
+dependencies:
+  - python>=3.6
+  - pip
+  - kafka-python
+  - flake8
+  - pytest
