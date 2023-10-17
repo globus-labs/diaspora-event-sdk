@@ -87,17 +87,18 @@ def request_token_workflow():
     if token:
         access_token = token['other_tokens'][0]['access_token']
         refresh_token = token['other_tokens'][0]['refresh_token']
-        print("***")
-        print("For Python clients (e.g., example_producer.py and example_consumer.py):")
-        print(f"export DIASPORA_REFRESH={refresh_token}")
-        print("***")
-
         payload = decode_jwt(token['id_token'])
         preferred_username = payload['preferred_username'].split("@")[0]
-        print("credential subject claim:", payload['sub'])
-        print("credential subject username:", preferred_username)
-        print("credential access token:", access_token, "(expires in two days)")
-        print("credential refresh token:", refresh_token, "(expires in six months of inactivity)")
+        print("="*32)
+        print("Credential subject claim:\t", payload['sub'])
+        print("Credential subject username:\t", preferred_username)
+        print("Kafka service access token:\t", access_token,
+              "(expires in two days)")
+        print("Kafka service refresh token:\t", refresh_token,
+              "(expires in six months of inactivity)")
+        print("Set environment variable:\t",
+              f"export DIASPORA_REFRESH={refresh_token}")
+        print("="*32)
 
         # print("For Java clients (kafka-oauth2-0.0.x.jar):")
         # print(f"save to {preferred_username}.properties")

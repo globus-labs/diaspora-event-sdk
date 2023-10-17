@@ -1,12 +1,18 @@
 # Diaspora Logger
 
-Diaspora Logger is a library for logging and processing events to Diaspora Stream using Globus Auth for authentication. Follow the steps below to set up and run the example producer and consumer scripts.
+Diaspora Logger is a library for logging events to the Diaspora Streams (Kafka) cluster. The producer and consumer connections to Diaspora Streams are authenticated with Globus Auth. Follow the steps below to set up a `DiasporaLogger` instance for producing events.
+
+## Install
+```bash
+pip install diaspora_logger
+```
 
 ## Setup
 
-1. **Generate Globus Auth Refresh Token:**
-    Run `credentials.py` to generate a Globus Auth refresh token.
-    ```bash
+1. **Generate Globus Auth Tokens:**
+    Run `credentials.py` to generate a Globus Auth access token and a refresh token. 
+
+    ```python
     from diaspora_logger import request_token_workflow
 
     request_token_workflow()
@@ -15,42 +21,63 @@ Diaspora Logger is a library for logging and processing events to Diaspora Strea
     ```
     Please visit the following URL to authorize the application: <Globus Auth /authorize endpoint>
     Paste the authorization code here: <authorization-code>
-    ***
-    For Python clients (e.g., example_producer.py and example_consumer.py):
-    export DIASPORA_REFRESH=<Globus-Auth-refresh-token>
-    ***
-    Credential subject claim: <subject-claim>
-    Credential subject username: <subject-username>
-    credential access token: <access-token> (expires in two days)
-    credential refresh token: <refresh-token> (expires in six months of inactivity)
+    ================================
+    Credential subject claim:        <subject-claim>
+    Credential subject username:     <subject-username>
+    Kafka service access token:      <access-token> (expires in two days)
+    Kafka service refresh token:     <refresh-token> (expires in six months of inactivity)
+    Set environment variable:        export DIASPORA_REFRESH=<refresh-token>
+    ================================
     ```
 
-    If it's your first time producing to a topic, use [our ACL endppoint](http://52.200.217.146:9090/acl) to claim one or more topics.
+    Note that the `<access-token>` is good for 48 hours once generated. The `<refresh-token>` expires after six months of inactivity but is good forever if used. The token owner can revoke the refresh token; see Globus Auth documentation for details.
 
 
-2. **Export Credential:**
-    Export the generated refresh token to your environment.
+2. **Register Topics:** Use the [public ACL endpoint](http://52.200.217.146:9090/acl) to claim topics. 
+
+    > A topic only needs to be claimed once, skip this step if you have a topic claimed previously.
+
+    The request form takes three inputs:
+    - Subject Claim: paste in the `<subject-claim>` retrieved above.
+    - Access Token: paste in the `<access-token>` retrieved above.
+    - Topic Name: a string consists of letters, numbers, and underscores. A topic name cannot start with an underscore. 
+
+    Once the form is submitted, this endpoint also generates an equivalent GET request with the form filled for conveniently claiming another topic through the web interface and an equivalent CURL POST request for using CLI tools to interact with the public ACL endpoint.
+
+    If the access token expires, the access token and the subject claim do not match, or the topic has ACL rules associated already (i.e., claimed by other users), the request will fail. 
+
+    If a topic is claimed by an user, different refresh token (if ever requested) would also work for this topic.
+
+
+3. **Export Credential:**
+    Instead of hard-coding the refresh token to your code repository, export it to your environment for using it. You could also put the token in a read-only file in the production environment.
     ```bash
     export DIASPORA_REFRESH=<Globus-Auth-refresh-token>
     ```
 
-3. **Running Producer:**
+4. **Run a Producer:**
     Set the `topic` variable to your producer topic, then call `run_producer_example()` to start the producer.
     ```python
-    topic = "<producer-topic>"
+    from diaspora_logger.examples import run_producer_example
+
+    topic = "<claimed-topic>"
     run_producer_example(topic)
     ```
 
-4. **Running Consumer:**
+    [Inside this example](/diaspora_logger/examples/example_producer.py), a `DiasporaLogger` instance is created, and all method calls to this instance will be directed to its `_producer` object, a [`KafkaProducer`](https://kafka-python.readthedocs.io/en/master/apidoc/KafkaProducer.html) instance of the kafka-python library. In other words, you can use `DiasporaLogger` exactly the same as a `KafkaProducer`.
+
+
+
+
+4. **Run a Consumer:**
     Set the `topic` and `group_id` variables to your consumer topic and group ID respectively, then call `run_consumer_example(topic, group_id)` to start the consumer.
     ```python
-    topic = '<consumer-topic>'
-    group_id = '<consumer-group-id>'
-    run_consumer_example(topic, group_id)
-    ```
+    from diaspora_logger.examples import run_consumer_example
 
-## Public ACL endpoint
-TODO
+    topic = '<consumer-topic>'
+    groupid = "<some-group-id-of-your-choice>"
+    run_consumer_example(topic, groupid)
+    ```
 
 ## Communication Flows
 

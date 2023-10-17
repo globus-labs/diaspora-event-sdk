@@ -48,26 +48,17 @@ class GlobusAuthTokenProvider(AbstractTokenProvider):
 
 
 class DiasporaLogger:
-    def __init__(self, topic, bootstrap_servers, refresh_token):
-        self.topic = topic
-        provider = GlobusAuthTokenProvider(refresh_token)
-        self.producer = KafkaProducer(
+    def __init__(self, bootstrap_servers, refresh_token):
+        self._provider = GlobusAuthTokenProvider(refresh_token)
+        self._producer = KafkaProducer(
             bootstrap_servers=bootstrap_servers,
-            sasl_oauth_token_provider=provider,
+            sasl_oauth_token_provider=self._provider,
             security_protocol="SASL_PLAINTEXT",
             sasl_mechanism="OAUTHBEARER",
             api_version=(3, 5, 1),
             value_serializer=lambda v: json.dumps(v).encode('utf-8')
         )
 
-    def send_sync(self, message):
-        future = self.producer.send(self.topic, message)
-        # Wait for up to 10 seconds for the message to be sent
-        result = future.get(timeout=10)
-        return result
-
-    def send_async(self, message, callback=None):
-        future = self.producer.send(self.topic, message)
-        if callback:
-            future.add_callback(callback)
-        return future  # Optionally return the future to allow the caller to add their own callback or errback
+    def __getattr__(self, name):
+        # Delegate attribute access to self._producer
+        return getattr(self._producer, name)

@@ -15,11 +15,13 @@ def run_producer_example(topic):
         raise ValueError("Environment variable DIASPORA_REFRESH not set")
 
     kafka_logger = DiasporaLogger(
-        topic=topic,
-        bootstrap_servers=["52.200.217.146:9093"],
+        bootstrap_servers=["52.200.217.146:9093", "54.210.46.108:9094"],
         refresh_token=refresh_token,
     )
 
-    kafka_logger.send_sync({'message': 'Synchronous message'})
-    kafka_logger.send_async(
-        {'message': 'Asynchronous message'}, callback=on_send_success)
+    future = kafka_logger.send(topic, {'message': 'Synchronous message'})
+    result = future.get(timeout=10)
+    print(result)
+
+    future = kafka_logger.send(topic, {'message': 'Asynchronous message'})
+    future.add_callback(on_send_success)
