@@ -139,3 +139,4 @@ credentials.py
 
 # Kafka related
 data/
+*.properties
