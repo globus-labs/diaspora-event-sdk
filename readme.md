@@ -33,7 +33,7 @@ pip install diaspora_logger
 
     Note that the `<access-token>` is good for 48 hours once generated. The `<refresh-token>` expires after six months of inactivity but is good forever if used. The token owner can revoke the refresh token; see Globus Auth documentation for details.
 
-    To generate `<subject-username>.properties` for establishing a connection from a Java client, call `request_token_workflow` with the optional argument `save_for_java=True`
+    To generate `<subject-username>.properties` for Java clients, call `request_token_workflow` with the optional argument `save_for_java=True`
 
 
 2. **Register Topics:** Use the [public ACL endpoint](http://52.200.217.146:9090/acl) to claim topics. 
