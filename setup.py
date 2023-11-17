@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
-    name='diaspora_event_sdk',
+    name='diaspora-event-sdk',
     version=__version__,
     description='SDK of Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge',
     long_description=long_description,
@@ -12,8 +12,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,  # This flag is used to include non-code files
     license='LICENSE',  # Specify the path to your LICENSE file
-    url='https://github.com/globus-labs/diaspora_event_sdk',
+    url='https://github.com/globus-labs/diaspora-event-sdk',
     install_requires=[
+        'globus-compute-sdk',
         'kafka-python',
     ],
 )

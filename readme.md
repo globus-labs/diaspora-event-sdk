@@ -2,7 +2,7 @@
 
 ### Install
 ```bash
-pip install diaspora_event_sdk
+pip install diaspora-event-sdk
 ```
 
 ## Use kafka-python
@@ -64,4 +64,4 @@ c = GlobusClient()
 c.retrieve_or_create_key()
 ```
 For SASL/SCRAM authentication, use `username` and `secret_key` as authentication credential;
-For AWS_IAM authentication, use `access_key` and `secret_key` as authentication credential.
+For AWS_MSK_IAM authentication, use `access_key` and `secret_key` as authentication credential.
