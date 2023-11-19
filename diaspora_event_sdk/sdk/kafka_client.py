@@ -1,46 +1,46 @@
 import json
-
 from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
 from kafka.admin import NewTopic
+from typing import Dict, Any
 
 from .client import Client
 from ._environments import MSK_SCRAM_ENDPOINT
 
-DEFAULT_CONFIGS = {
-    "bootstrap_servers":  MSK_SCRAM_ENDPOINT,
-    "security_protocol": "SASL_SSL",
-    "sasl_mechanism": "SCRAM-SHA-512",
-    "api_version": (3, 5, 1)
-}
+
+def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
+    """
+    Retrieve default Diaspora event fabric connection configurations for Kafka clients.
+    Merges default configurations with custom ones provided.
+    """
+    try:
+        keys = Client().retrieve_key()
+    except Exception as e:
+        raise RuntimeError("Failed to retrieve Kafka keys") from e
+
+    conf = {
+        "bootstrap_servers":  MSK_SCRAM_ENDPOINT,
+        "security_protocol": "SASL_SSL",
+        "sasl_mechanism": "SCRAM-SHA-512",
+        "api_version": (3, 5, 1),
+        "sasl_plain_username": keys["username"],
+        "sasl_plain_password": keys["password"],
+    }
+    conf.update(extra_configs)
+    return conf
 
 
 class KafkaAdmin(KafkaAdminClient):
     def __init__(self, **configs):
-        keys = Client().retrieve_or_create_key()
-        conf = DEFAULT_CONFIGS.copy()
-        conf["sasl_plain_username"] = keys["username"]
-        conf["sasl_plain_password"] = keys["secret_key"]
-        conf.update(configs)
-        super().__init__(**conf)
+        super().__init__(**get_diaspora_config(configs))
 
 
-class Producer(KafkaProducer):
+class KafkaProducer(KafkaProducer):
     def __init__(self, **configs):
-        keys = Client().retrieve_or_create_key()
-        conf = DEFAULT_CONFIGS.copy()
-        conf["sasl_plain_username"] = keys["username"]
-        conf["sasl_plain_password"] = keys["secret_key"]
-        conf["value_serializer"] = lambda v: json.dumps(
-            v).encode('utf-8')
-        conf.update(configs)
-        super().__init__(**conf)
+        configs.setdefault("value_serializer",
+                           lambda v: json.dumps(v).encode('utf-8'))
+        super().__init__(**get_diaspora_config(configs))
 
 
-class Consumer(KafkaConsumer):
+class KafkaConsumer(KafkaConsumer):
     def __init__(self, *topics, **configs):
-        keys = Client().retrieve_or_create_key()
-        conf = DEFAULT_CONFIGS.copy()
-        conf["sasl_plain_username"] = keys["username"]
-        conf["sasl_plain_password"] = keys["secret_key"]
-        conf.update(configs)
-        super().__init__(*topics, **conf)
+        super().__init__(*topics, **get_diaspora_config(configs))

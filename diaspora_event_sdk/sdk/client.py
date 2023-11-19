@@ -35,6 +35,9 @@ class Client:
 
     @requires_login
     def create_key(self):
+        """
+        Invalidate previous keys (if any) and generate a new one
+        """
         resp = self.web_client.create_key(self.subject_openid)
         if resp["status"] == "error":
             raise Exception("should not happen")
@@ -53,28 +56,27 @@ class Client:
                 ],
             )
             self.login_manager._token_storage._connection.commit()
-        return resp
+        return {"username": self.subject_openid, "password": tokens['secret_key']}
 
     @requires_login
-    def retrieve_or_create_key(self):
+    def retrieve_key(self):
+        """
+        Attempt to retrieve the key from local token storage, call create_key if not found
+        """
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER)
         if "access_key" in tokens and "secret_key" in tokens:
-            return {
-                "status": "succeed", "username": self.subject_openid,
-                "access_key": tokens['access_key'],
-                "secret_key": tokens['secret_key']
-            }
-        return self.create_key()
+            return {"username": self.subject_openid, "password": tokens['secret_key']}
+        return self.retrieve_key()
 
     @requires_login
-    def acl_list(self):
-        return self.web_client.acl_list(self.subject_openid)
+    def list_topics(self):
+        return self.web_client.list_topics(self.subject_openid)
 
     @requires_login
-    def acl_add(self, topic):
-        return self.web_client.acl_add(self.subject_openid, topic)
+    def register_topic(self, topic):
+        return self.web_client.register_topic(self.subject_openid, topic)
 
     @requires_login
-    def acl_remove(self, topic):
-        return self.web_client.acl_remove(self.subject_openid, topic)
+    def unregister_topic(self, topic):
+        return self.web_client.unregister_topic(self.subject_openid, topic)
