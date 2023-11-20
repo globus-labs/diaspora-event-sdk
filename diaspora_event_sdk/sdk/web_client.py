@@ -2,8 +2,8 @@
 import typing as t
 
 import globus_sdk
-from globus_compute_sdk.sdk.utils.uuid_like import UUID_LIKE_T
 from globus_sdk.exc.api import GlobusAPIError
+from diaspora_event_sdk.sdk.utils.uuid_like import UUID_LIKE_T
 
 from ._environments import TOKEN_EXCHANGE
 

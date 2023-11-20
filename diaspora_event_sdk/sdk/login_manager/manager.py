@@ -8,7 +8,7 @@ import typing as t
 
 import globus_sdk
 from globus_sdk.scopes import AuthScopes, ScopeBuilder
-from globus_compute_sdk.sdk.login_manager.tokenstore import get_token_storage_adapter
+from diaspora_event_sdk.sdk.login_manager.tokenstore import get_token_storage_adapter
 
 from .._environments import DIASPORA_RESOURCE_SERVER
 from ..web_client import WebClient

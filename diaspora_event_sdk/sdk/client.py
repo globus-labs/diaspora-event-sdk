@@ -1,8 +1,6 @@
 import json
 
-from diaspora_event_sdk.sdk.login_manager.manager import LoginManager
-from diaspora_event_sdk.sdk.login_manager import requires_login
-from globus_compute_sdk.sdk.login_manager import LoginManagerProtocol
+from diaspora_event_sdk.sdk.login_manager import LoginManager, LoginManagerProtocol, requires_login
 
 from ._environments import TOKEN_EXCHANGE, DIASPORA_RESOURCE_SERVER
 
@@ -61,22 +59,32 @@ class Client:
     @requires_login
     def retrieve_key(self):
         """
-        Attempt to retrieve the key from local token storage, call create_key if not found
+        Attempt to retrieve the key from local token storage, and call create_key if local key is not found
         """
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER)
-        if "access_key" in tokens and "secret_key" in tokens:
+        if tokens is None or "access_key" not in tokens or "secret_key" not in tokens:
+            return self.create_key()
+        else:
             return {"username": self.subject_openid, "password": tokens['secret_key']}
-        return self.retrieve_key()
 
     @requires_login
     def list_topics(self):
+        """
+        Retrieves the list of topics associated with the user's OpenID. 
+        """
         return self.web_client.list_topics(self.subject_openid)
 
     @requires_login
     def register_topic(self, topic):
+        """
+        Registers a new topic under the user's OpenID. 
+        """
         return self.web_client.register_topic(self.subject_openid, topic)
 
     @requires_login
     def unregister_topic(self, topic):
+        """
+        Unregisters a topic from the user's OpenID. 
+        """
         return self.web_client.unregister_topic(self.subject_openid, topic)

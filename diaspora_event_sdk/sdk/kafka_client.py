@@ -1,10 +1,17 @@
 import json
-from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
-from kafka.admin import NewTopic
 from typing import Dict, Any
+import warnings
 
-from .client import Client
 from ._environments import MSK_SCRAM_ENDPOINT
+from .client import Client
+
+# If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
+kafka_available = True
+try:
+    from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
+    from kafka.admin import NewTopic
+except ImportError:
+    kafka_available = False
 
 
 def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
@@ -29,18 +36,17 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
     return conf
 
 
-class KafkaAdmin(KafkaAdminClient):
-    def __init__(self, **configs):
-        super().__init__(**get_diaspora_config(configs))
+if kafka_available:
+    class KafkaAdmin(KafkaAdminClient):
+        def __init__(self, **configs):
+            super().__init__(**get_diaspora_config(configs))
 
+    class KafkaProducer(KafkaProducer):
+        def __init__(self, **configs):
+            configs.setdefault("value_serializer",
+                               lambda v: json.dumps(v).encode('utf-8'))
+            super().__init__(**get_diaspora_config(configs))
 
-class KafkaProducer(KafkaProducer):
-    def __init__(self, **configs):
-        configs.setdefault("value_serializer",
-                           lambda v: json.dumps(v).encode('utf-8'))
-        super().__init__(**get_diaspora_config(configs))
-
-
-class KafkaConsumer(KafkaConsumer):
-    def __init__(self, *topics, **configs):
-        super().__init__(*topics, **get_diaspora_config(configs))
+    class KafkaConsumer(KafkaConsumer):
+        def __init__(self, *topics, **configs):
+            super().__init__(*topics, **get_diaspora_config(configs))
