@@ -70,8 +70,7 @@ from diaspora_event_sdk import KafkaProducer
 producer = KafkaProducer()
 future = producer.send(
     topic, {'message': 'Synchronous message from Diaspora SDK'})
-result = future.get(timeout=10)
-print(result)
+print(future.get(timeout=10))
 ```
 
 #### Start Consumer
@@ -89,8 +88,7 @@ for msg in consumer:
 ```python
 from diaspora_event_sdk import KafkaAdmin
 admin = KafkaAdmin()
-res = admin.delete_topics(topics=[topic])
-print(res)
+print(admin.delete_topics(topics=[topic]))
 ```
 
 #### Unregister Topic (remove topic ACLs)
@@ -108,14 +106,14 @@ print(c.list_topics())
 The steps are the same as above by using the `register_topic`, `unregister_topic`, and `list_topics` methods from the `Client` class.
 
 #### Cluster Connection Details
-| Configuration     | Value                                                                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Bootstrap Servers | [`MSK_SCRAM_ENDPOINT`](https://github.com/globus-labs/diaspora-event-sdk/blob/main/diaspora_event_sdk/sdk/_environments.py#L6) |
-| Security Protocol | `SASL_SSL`                                                                                                                     |
-| Sasl Mechanism    | `SCRAM-SHA-512`                                                                                                                |
-| Api Version       | `3.5.1`                                                                                                                        |
-| Username          | (See instructions below)                                                                                                       |
-| Password          | (See instructions below)                                                                                                       |
+| Configuration     | Value                                                               |
+| ----------------- | ------------------------------------------------------------------- |
+| Bootstrap Servers | [`MSK_SCRAM_ENDPOINT`](/diaspora_event_sdk/sdk/_environments.py#L6) |
+| Security Protocol | `SASL_SSL`                                                          |
+| Sasl Mechanism    | `SCRAM-SHA-512`                                                     |
+| Api Version       | `3.5.1`                                                             |
+| Username          | (See instructions below)                                            |
+| Password          | (See instructions below)                                            |
 
 Execute the code snippet below to obtain your unique username and password for the Kafka cluster:
 ```python
