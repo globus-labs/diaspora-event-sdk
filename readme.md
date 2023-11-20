@@ -16,6 +16,9 @@
     - [Cluster Connection Details](#cluster-connection-details)
   - [Advanced Usage](#advanced-usage)
     - [Password Refresh](#password-refresh)
+  - [Common Issues](#common-issues)
+    - [ImportError: cannot import name 'KafkaAdmin' from 'diaspora\_event\_sdk'](#importerror-cannot-import-name-kafkaadmin-from-diaspora_event_sdk)
+    - [kafka.errors.NoBrokersAvailable: NoBrokersAvailable](#kafkaerrorsnobrokersavailable-nobrokersavailable)
 
 ## Installation Instructions
 ### Recommended Installation with Kafka Client Library: kafka-python
@@ -132,3 +135,12 @@ c = GlobusClient()
 print(c.create_key())
 ```
 Subsequent calls to `retrieve_key` will return the new password from the cache. This cache is reset with a logout or a new `create_key` call.
+
+### Common Issues
+
+#### ImportError: cannot import name 'KafkaAdmin' from 'diaspora_event_sdk'
+
+It seems that you ran `pip install diaspora-event-sdk` to install the Diaspora Event SDK without `kafka-python`. Run `pip install kafka-python` to install the necessary dependency for our `KafkaAdmin`, `KafkaProducer`, and `KafkaConsumer` classes.
+
+#### kafka.errors.NoBrokersAvailable: NoBrokersAvailable
+This message might pop up if you have called `create_key` shortly before instanciating a Kafka client. This is because there's a delay for AWS Secret Manager to associate the newly generated credential with MSK. Please wait a while (around 30 seconds) and retry.
