@@ -1,22 +1,21 @@
 # Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge
 
-- [Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge](#diaspora-event-fabric-resilience-enabling-services-for-science-from-hpc-to-edge)
-  - [Installation Instructions](#installation-instructions)
-    - [Recommended Installation with Kafka Client Library: kafka-python](#recommended-installation-with-kafka-client-library-kafka-python)
-    - [Installation Without Kafka Client Library](#installation-without-kafka-client-library)
-  - [Use Diaspora Event SDK](#use-diaspora-event-sdk)
-    - [Use SDK to communicate with Kafka (kafka-python Required)](#use-sdk-to-communicate-with-kafka-kafka-python-required)
-      - [Register Topic (create topic ACLs)](#register-topic-create-topic-acls)
-      - [Create Topic](#create-topic)
-      - [Start Producer](#start-producer)
-      - [Start Consumer](#start-consumer)
-      - [Delete Topic](#delete-topic)
-      - [Unregister Topic (remove topic ACLs)](#unregister-topic-remove-topic-acls)
-    - [Communicating with Kafka Using Your Preferred Client Library](#communicating-with-kafka-using-your-preferred-client-library)
-      - [Register and Unregister Topic](#register-and-unregister-topic)
-      - [Cluster Connection Details](#cluster-connection-details)
-    - [Advanced Usage](#advanced-usage)
-      - [Password Refresh](#password-refresh)
+- [Installation Instructions](#installation-instructions)
+  - [Recommended Installation with Kafka Client Library: kafka-python](#recommended-installation-with-kafka-client-library-kafka-python)
+  - [Installation Without Kafka Client Library](#installation-without-kafka-client-library)
+- [Use Diaspora Event SDK](#use-diaspora-event-sdk)
+  - [Use SDK to communicate with Kafka (kafka-python Required)](#use-sdk-to-communicate-with-kafka-kafka-python-required)
+    - [Register Topic (create topic ACLs)](#register-topic-create-topic-acls)
+    - [Create Topic](#create-topic)
+    - [Start Producer](#start-producer)
+    - [Start Consumer](#start-consumer)
+    - [Delete Topic](#delete-topic)
+    - [Unregister Topic (remove topic ACLs)](#unregister-topic-remove-topic-acls)
+  - [Communicating with Kafka Using Your Preferred Client Library](#communicating-with-kafka-using-your-preferred-client-library)
+    - [Register and Unregister Topic](#register-and-unregister-topic)
+    - [Cluster Connection Details](#cluster-connection-details)
+  - [Advanced Usage](#advanced-usage)
+    - [Password Refresh](#password-refresh)
 
 ## Installation Instructions
 ### Recommended Installation with Kafka Client Library: kafka-python
@@ -111,7 +110,7 @@ The steps are the same as above by using the `register_topic`, `unregister_topic
 #### Cluster Connection Details
 | Configuration     | Value                    |
 | ----------------- | ------------------------ |
-| Bootstrap Servers | `MSK_SCRAM_ENDPOINT`     |
+| Bootstrap Servers | (`MSK_SCRAM_ENDPOINT`)[https://github.com/globus-labs/diaspora-event-sdk/blob/main/diaspora_event_sdk/sdk/_environments.py#L6]     |
 | Security Protocol | `SASL_SSL`               |
 | Sasl Mechanism    | `SCRAM-SHA-512`          |
 | Api Version       | `3.5.1`                  |
