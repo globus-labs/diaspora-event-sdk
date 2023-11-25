@@ -26,7 +26,7 @@ If you plan to utilize the `KafkaAdmin`, `KafkaProducer`, and `KafkaConsumer` cl
 
 To install Diaspora Event SDK with `kafka-python`, run:
 ```bash
-pip install diaspora-event-sdk[kafka-python]
+pip install "diaspora-event-sdk[kafka-python]"
 ```
 
 ### Installation Without Kafka Client Library

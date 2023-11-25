@@ -98,6 +98,7 @@ class LoginManager:
             ]
 
         token = do_link_auth_flow(scopes)
+        print(token)
         with self._access_lock:
             self._token_storage.store(token)
 
