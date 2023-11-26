@@ -1,8 +1,6 @@
-
-import typing as t
+from typing import Optional
 
 import globus_sdk
-from globus_sdk.exc.api import GlobusAPIError
 from diaspora_event_sdk.sdk.utils.uuid_like import UUID_LIKE_T
 
 from ._environments import TOKEN_EXCHANGE
@@ -13,9 +11,9 @@ class WebClient(globus_sdk.BaseClient):
     def __init__(
         self,
         *,
-        environment: t.Optional[str] = None,
-        base_url: t.Optional[str] = None,
-        app_name: t.Optional[str] = None,
+        environment: Optional[str] = None,
+        base_url: Optional[str] = None,
+        app_name: Optional[str] = None,
         **kwargs,
     ):
         if base_url is None:

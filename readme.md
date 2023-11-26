@@ -142,5 +142,5 @@ Subsequent calls to `retrieve_key` will return the new password from the cache. 
 
 It seems that you ran `pip install diaspora-event-sdk` to install the Diaspora Event SDK without `kafka-python`. Run `pip install kafka-python` to install the necessary dependency for our `KafkaAdmin`, `KafkaProducer`, and `KafkaConsumer` classes.
 
-#### kafka.errors.NoBrokersAvailable: NoBrokersAvailable
-This message might pop up if you have called `create_key` shortly before instanciating a Kafka client. This is because there's a delay for AWS Secret Manager to associate the newly generated credential with MSK. Please wait a while (around 30 seconds) and retry.
+#### kafka.errors.NoBrokersAvailable and kafka.errors.NodeNotReadyError
+These messages might pop up if `create_key` is called shortly before instanciating a Kafka client. This is because there's a delay for AWS Secret Manager to associate the newly generated credential with MSK. Note that `create_key` is called the first time you create one of these clients. Please wait a while (around 1 minute) and retry.

@@ -1,7 +1,7 @@
+from typing import Optional
 import json
 
 from diaspora_event_sdk.sdk.login_manager import LoginManager, LoginManagerProtocol, requires_login
-
 from ._environments import TOKEN_EXCHANGE, DIASPORA_RESOURCE_SERVER
 
 
@@ -9,8 +9,8 @@ class Client:
 
     def __init__(
         self,
-        environment: str | None = None,
-        login_manager: LoginManagerProtocol | None = None,
+        environment: Optional[str] = None,
+        login_manager: Optional[LoginManagerProtocol] = None,
     ):
         # if a login manager was passed, no login flow is triggered
         if login_manager is not None:
