@@ -8,8 +8,7 @@ from .client import Client
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
 kafka_available = True
 try:
-    from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
-    from kafka.admin import NewTopic
+    from kafka import KafkaProducer, KafkaConsumer
 except ImportError:
     kafka_available = False
 
@@ -37,9 +36,6 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
 
 
 if kafka_available:
-    class KafkaAdmin(KafkaAdminClient):
-        def __init__(self, **configs):
-            super().__init__(**get_diaspora_config(configs))
 
     class KafkaProducer(KafkaProducer):
         def __init__(self, **configs):
