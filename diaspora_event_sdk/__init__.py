@@ -10,8 +10,7 @@ from diaspora_event_sdk.sdk.client import Client  # Globus client
 from diaspora_event_sdk.sdk.kafka_client import kafka_available
 
 if kafka_available:
-    from diaspora_event_sdk.sdk.kafka_client import KafkaProducer, KafkaConsumer, KafkaAdmin, NewTopic
-    __all__ = ("Client", "KafkaProducer", "KafkaConsumer",
-               "KafkaAdmin", "NewTopic")
+    from diaspora_event_sdk.sdk.kafka_client import KafkaProducer, KafkaConsumer
+    __all__ = ("Client", "KafkaProducer", "KafkaConsumer")
 else:
     __all__ = ("Client")
