@@ -24,7 +24,7 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
         raise RuntimeError("Failed to retrieve Kafka keys") from e
 
     conf = {
-        "bootstrap_servers":  MSK_SCRAM_ENDPOINT,
+        "bootstrap_servers": MSK_SCRAM_ENDPOINT,
         "security_protocol": "SASL_SSL",
         "sasl_mechanism": "SCRAM-SHA-512",
         "api_version": (3, 5, 1),
@@ -39,8 +39,9 @@ if kafka_available:
 
     class KafkaProducer(KafkaProducer):
         def __init__(self, **configs):
-            configs.setdefault("value_serializer",
-                               lambda v: json.dumps(v).encode('utf-8'))
+            configs.setdefault(
+                "value_serializer", lambda v: json.dumps(v).encode("utf-8")
+            )
             super().__init__(**get_diaspora_config(configs))
 
     class KafkaConsumer(KafkaConsumer):
