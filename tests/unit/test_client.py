@@ -2,12 +2,13 @@ import pytest
 from unittest.mock import Mock, patch
 from unittest.mock import MagicMock
 from diaspora_event_sdk import Client
-
+from diaspora_event_sdk.sdk.web_client import WebClient
+from diaspora_event_sdk.sdk.login_manager import LoginManager
 
 @pytest.fixture
-def mock_login_manager():
-    login_manager = Mock()
-    login_manager.get_web_client.return_value = Mock()
+def mock_login_manager(): # TODO
+    login_manager = Mock(spec=LoginManager())
+    login_manager.get_web_client.return_value = Mock(spec=WebClient)
     login_manager.get_auth_client.return_value = Mock(
         oauth2_userinfo=lambda: {"sub": "test_sub"})
     login_manager._token_storage.get_token_data.return_value = {
