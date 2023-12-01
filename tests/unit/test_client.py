@@ -32,8 +32,9 @@ def test_init(mock_login_manager):
 
 
 def test_logout(client):
+    assert not client.login_manager.logout.called, "Verify test setup"
     client.logout()
-    client.login_manager.logout.assert_called_once()
+    assert client.login_manager.logout.called
 
 
 def test_create_key(client):

@@ -25,13 +25,13 @@ class WebClient(globus_sdk.BaseClient):
         self.user_app_name = app_name
 
     def create_key(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
-        return self.post("/v1/create_key", headers={"Subject": subject})
+        return self.post("/v1/create_key", headers={"Subject": str(subject)})
 
     def list_topics(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
-        return self.get("/v1/list_topics", headers={"Subject": subject})
+        return self.get("/v1/list_topics", headers={"Subject": str(subject)})
 
     def register_topic(self, subject: UUID_LIKE_T, topic: str) -> globus_sdk.GlobusHTTPResponse:
-        return self.post("/v1/register_topic", headers={"Subject": subject, "Topic": topic})
+        return self.post("/v1/register_topic", headers={"Subject": str(subject), "Topic": topic})
 
     def unregister_topic(self, subject: UUID_LIKE_T, topic: str) -> globus_sdk.GlobusHTTPResponse:
-        return self.post("/v1/unregister_topic", headers={"Subject": subject, "Topic": topic})
+        return self.post("/v1/unregister_topic", headers={"Subject": str(subject), "Topic": topic})

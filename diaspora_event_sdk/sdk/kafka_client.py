@@ -8,7 +8,9 @@ from .client import Client
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
 kafka_available = True
 try:
-    from kafka import KafkaProducer, KafkaConsumer
+    from kafka import KafkaProducer as KProd  # type: ignore[import-not-found]
+    from kafka import KafkaConsumer as KCons  # type: ignore[import-not-found]
+
 except ImportError:
     kafka_available = False
 
@@ -36,14 +38,24 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
 
 
 if kafka_available:
-
-    class KafkaProducer(KafkaProducer):
+    class KafkaProducer(KProd):
         def __init__(self, **configs):
             configs.setdefault(
                 "value_serializer", lambda v: json.dumps(v).encode("utf-8")
             )
             super().__init__(**get_diaspora_config(configs))
 
-    class KafkaConsumer(KafkaConsumer):
+    class KafkaConsumer(KCons):
         def __init__(self, *topics, **configs):
             super().__init__(*topics, **get_diaspora_config(configs))
+else:
+    # Create dummy classes that issue a warning when instantiated
+    class KafkaProducer:  # type: ignore[no-redef]
+        def __init__(self, *args, **kwargs):
+            warnings.warn(
+                "KafkaProducer is not available. Initialization is a no-op.", RuntimeWarning)
+
+    class KafkaConsumer:  # type: ignore[no-redef]
+        def __init__(self, *args, **kwargs):
+            warnings.warn(
+                "KafkaConsumer is not available. Initialization is a no-op.", RuntimeWarning)
