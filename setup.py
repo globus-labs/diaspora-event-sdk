@@ -1,12 +1,29 @@
-from setuptools import setup, find_packages
-from diaspora_event_sdk.version import __version__
+import os
+import re
+from pathlib import Path
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+from setuptools import setup, find_packages
+
+def parse_version():
+    # single source of truth for package version
+    version_string = ""
+    version_pattern = re.compile(r'__version__ = "([^"]*)"')
+    with open(os.path.join("diaspora_event_sdk", "version.py")) as f:
+        for line in f:
+            match = version_pattern.match(line)
+            if match:
+                version_string = match.group(1)
+                break
+    if not version_string:
+        raise RuntimeError("Failed to parse version information")
+    return version_string
+
+directory = Path(__file__).parent
+long_description = (directory / "readme.md").read_text()
 
 setup(
     name='diaspora-event-sdk',
-    version=__version__,
+    version=parse_version(),
     description='SDK of Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -15,7 +32,7 @@ setup(
     license='LICENSE',
     url='https://github.com/globus-labs/diaspora-event-sdk',
     install_requires=[
-        'globus-sdk',
+       "globus-sdk>=3.20.1,<4",
     ],
     extras_require={
         'kafka-python': ['kafka-python']
