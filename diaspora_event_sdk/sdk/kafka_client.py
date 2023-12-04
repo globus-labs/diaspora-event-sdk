@@ -8,8 +8,8 @@ from .client import Client
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
 kafka_available = True
 try:
-    from kafka import KafkaProducer as KProd  # type: ignore[import-not-found]
-    from kafka import KafkaConsumer as KCons  # type: ignore[import-not-found]
+    from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
+    from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
 
 except ImportError:
     kafka_available = False
