@@ -2,7 +2,8 @@ name: Daily Tox Test
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'  # Runs at midnight every day
+  workflow_dispatch:  # This allows manual triggering
 
 jobs:
   tox-test:
