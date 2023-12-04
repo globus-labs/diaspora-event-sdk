@@ -1,0 +1,25 @@
+name: Daily Tox Test
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs at midnight every day
+  workflow_dispatch:  # This allows manual triggering
+
+jobs:
+  tox-test:
+    runs-on: ubuntu-latest  # or any other OS
+
+    strategy:
+      matrix:
+        python-version: [3.9, 3.11]  # Adjust Python versions as needed
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: python -m pip install -U pip setuptools
+    - run: python -m pip install tox pytest
+    - name: Run tox
+      run: tox
