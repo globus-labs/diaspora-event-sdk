@@ -126,3 +126,21 @@ It seems that you ran `pip install diaspora-event-sdk` to install the Diaspora E
 
 ### kafka.errors.NoBrokersAvailable and kafka.errors.NodeNotReadyError
 These messages might pop up if `create_key` is called shortly before instanciating a Kafka client. This is because there's a delay for AWS Secret Manager to associate the newly generated credential with MSK. Note that `create_key` is called internally by `kafka_client.py` the first time you create one of these clients. Please wait a while (around 1 minute) and retry.
+
+### kafka.errors.KafkaTimeoutError: KafkaTimeoutError: Failed to update metadata after 60.0 secs.
+**Step 1: Verify Topic Creation and Access:**
+Before interacting with the producer/consumer, ensure that the topic has been successfully created and access is granted to you. Execute the following command:
+
+```python
+from diaspora_event_sdk import Client as GlobusClient
+c = GlobusClient()
+# topic = <the topic you want to use>
+print(c.register_topic(topic)) 
+```
+This should return a `status: no-op` message, indicating that the topic is already registered and accessible.
+
+**Step 2: Wait Automatic Key Creation in KafkaProducer and KafkaConsumer**
+`KafkaProducer` and `KafkaConsumer` would internally call `create_key` if the keys are not found locally (e.g., when you first authenticated with Globus). Behind the sence, the middle service contacts AWS to initialize the asynchronous process of creating and associating the secret. Please wait a while (around 1 minute) and retry.
+
+### ssl.SSLCertVerificationError
+This is commmon on MacOS system, see [this StackOverflow answer](https://stackoverflow.com/a/53310545).
