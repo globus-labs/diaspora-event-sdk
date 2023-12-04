@@ -4,6 +4,9 @@ from pathlib import Path
 
 from setuptools import setup, find_packages
 
+TEST_REQUIRES = ["pytest", "pytest-cov", "coverage", "mypy", "tox", "check-manifest"]
+
+
 def parse_version():
     # single source of truth for package version
     version_string = ""
@@ -18,23 +21,22 @@ def parse_version():
         raise RuntimeError("Failed to parse version information")
     return version_string
 
+
 directory = Path(__file__).parent
-long_description = (directory / "readme.md").read_text()
+long_description = (directory / "README.md").read_text()
 
 setup(
-    name='diaspora-event-sdk',
+    name="diaspora-event-sdk",
     version=parse_version(),
-    description='SDK of Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge',
+    description="SDK of Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     packages=find_packages(),
     include_package_data=True,
-    license='LICENSE',
-    url='https://github.com/globus-labs/diaspora-event-sdk',
+    license="LICENSE",
+    url="https://github.com/globus-labs/diaspora-event-sdk",
     install_requires=[
-       "globus-sdk>=3.20.1,<4",
+        "globus-sdk>=3.20.1,<4",
     ],
-    extras_require={
-        'kafka-python': ['kafka-python']
-    },
+    extras_require={"kafka-python": ["kafka-python"], "test": TEST_REQUIRES},
 )
