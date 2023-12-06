@@ -57,11 +57,11 @@ print(c.list_topics())
 Register a topic also creates it, if the topic previously does not exist.
 
 #### Block Until Ready
-`KafkaProducer` and `KafkaConsumer` would internally call `create_key` if the the connection credential is not found locally (e.g., when you first authenticated with Globus). Behind the sence, the middle service contacts AWS to initialize the asynchronous process of creating and associating the secret. The method below blocks until the credential is ready to be used by producer and consumer. When the method finishes, the producer and consumer code below should work without further waiting.
+`KafkaProducer` and `KafkaConsumer` would internally call `create_key` if the the connection credential is not found locally (e.g., when you first authenticated with Globus). Behind the sence, the middle service contacts AWS to initialize the asynchronous process of creating and associating the secret. The method below blocks until the credential is ready to be used by producer and consumer. When the method finishes, it returns True and the producer and consumer code below should work without further waiting. By default, the method retries in loop for five minutes before giving up and return False. Use parameter `max_minutes` to change the number of minutes of max waiting.
 
 ```python 
 from diaspora_event_sdk import block_until_ready
-block_until_ready()
+assert block_until_ready()
 ```
 
 #### Start Producer

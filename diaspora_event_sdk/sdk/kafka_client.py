@@ -1,6 +1,7 @@
 import json
 from typing import Dict, Any
 import warnings
+import time
 
 from ._environments import MSK_SCRAM_ENDPOINT
 from .client import Client
@@ -67,7 +68,13 @@ else:
 
 
 # TODO: mypy diaspora_event_sdk/sdk/kafka_client.py --disallow-untyped-defs
-def block_until_ready():
+def block_until_ready(max_minutes=5):
+    """
+    Test Kafka producer and consumer connections.
+    By default, this method blocks for five minutes before giving up.
+    It returns a boolean that indicates whether the connections can be successfully established.
+    """
+
     def producer_connection_test(result):
         try:
             producer = KafkaProducer(max_block_ms=10 * 1000)
@@ -93,9 +100,15 @@ def block_until_ready():
             pass
 
     result, retry_count = {}, 0
+    start_time = time.time()
     while len(result) < 2:  # two tests
         if retry_count > 0:
-            print("Block until connected...", retry_count)
+            print("Block until connected... retry count:", retry_count, ", time passed:", int(time.time() - start_time), "seconds")
         producer_connection_test(result)
         consumer_connection_test(result)
         retry_count += 1
+        elapsed_time = time.time() - start_time
+        if elapsed_time >= max_minutes * 60:
+            print("Time limit exceeded. Exiting loop.")
+            return False
+    return True
