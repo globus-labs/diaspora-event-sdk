@@ -38,6 +38,7 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
 
 
 if kafka_available:
+
     class KafkaProducer(KProd):
         def __init__(self, **configs):
             configs.setdefault(
@@ -53,9 +54,48 @@ else:
     class KafkaProducer:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
             warnings.warn(
-                "KafkaProducer is not available. Initialization is a no-op.", RuntimeWarning)
+                "KafkaProducer is not available. Initialization is a no-op.",
+                RuntimeWarning,
+            )
 
     class KafkaConsumer:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
             warnings.warn(
-                "KafkaConsumer is not available. Initialization is a no-op.", RuntimeWarning)
+                "KafkaConsumer is not available. Initialization is a no-op.",
+                RuntimeWarning,
+            )
+
+
+# TODO: mypy diaspora_event_sdk/sdk/kafka_client.py --disallow-untyped-defs
+def block_until_ready():
+    def producer_connection_test(result):
+        try:
+            producer = KafkaProducer(max_block_ms=10 * 1000)
+            future = producer.send(
+                topic="__connection_test",
+                value={"message": "Synchronous message from Diaspora SDK"},
+            )
+            result["producer_connection_test"] = future.get(timeout=10)
+        except Exception as e:
+            pass
+
+    def consumer_connection_test(result):
+        try:
+            consumer = KafkaConsumer(
+                "__connection_test",
+                consumer_timeout_ms=10 * 1000,
+                auto_offset_reset="earliest",
+            )
+            for msg in consumer:
+                result["consumer_connection_test"] = msg
+                break
+        except Exception as e:
+            pass
+
+    result, retry_count = {}, 0
+    while len(result) < 2:  # two tests
+        if retry_count > 0:
+            print("Block until connected...", retry_count)
+        producer_connection_test(result)
+        consumer_connection_test(result)
+        retry_count += 1

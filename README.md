@@ -1,22 +1,25 @@
 <h1>Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge</h1>
 
 - [Installation](#installation)
-   * [Recommended Installation with Kafka Client Library](#recommended-installation-with-kafka-client-library)
-   * [Installation Without Kafka Client Library](#installation-without-kafka-client-library)
+  * [Recommended Installation with Kafka Client Library](#recommended-installation-with-kafka-client-library)
+  * [Installation Without Kafka Client Library](#installation-without-kafka-client-library)
 - [Use Diaspora Event SDK](#use-diaspora-event-sdk)
-   * [Use the SDK to communicate with Kafka (kafka-python Required)](#use-the-sdk-to-communicate-with-kafka-kafka-python-required)
-      + [Register Topic (create topic ACLs)](#register-topic-create-topic-acls)
-      + [Start Producer](#start-producer)
-      + [Start Consumer](#start-consumer)
-      + [Unregister Topic (remove topic ACLs)](#unregister-topic-remove-topic-acls)
-   * [Use Your Preferred Kafka Client Library](#use-your-preferred-kafka-client-library)
-      + [Register and Unregister Topic](#register-and-unregister-topic)
-      + [Cluster Connection Details](#cluster-connection-details)
-   * [Advanced Usage](#advanced-usage)
-      + [Password Refresh](#password-refresh)
+  * [Use the SDK to communicate with Kafka (kafka-python Required)](#use-the-sdk-to-communicate-with-kafka--kafka-python-required-)
+    + [Register Topic (create topic ACLs)](#register-topic--create-topic-acls-)
+    + [Block Until Ready](#block-until-ready)
+    + [Start Producer](#start-producer)
+    + [Start Consumer](#start-consumer)
+    + [Unregister Topic (remove topic ACLs)](#unregister-topic--remove-topic-acls-)
+  * [Use Your Preferred Kafka Client Library](#use-your-preferred-kafka-client-library)
+    + [Register and Unregister Topic](#register-and-unregister-topic)
+    + [Cluster Connection Details](#cluster-connection-details)
+  * [Advanced Usage](#advanced-usage)
+    + [Password Refresh](#password-refresh)
 - [Common Issues](#common-issues)
-   * [ImportError: cannot import name 'KafkaProducer' from 'diaspora_event_sdk'](#importerror-cannot-import-name-kafkaproducer-from-diaspora_event_sdk)
-   * [kafka.errors.NoBrokersAvailable and kafka.errors.NodeNotReadyError](#kafkaerrorsnobrokersavailable-and-kafkaerrorsnodenotreadyerror)
+  * [ImportError: cannot import name 'KafkaProducer' from 'diaspora_event_sdk'](#importerror--cannot-import-name--kafkaproducer--from--diaspora-event-sdk-)
+  * [kafka.errors.NoBrokersAvailable and kafka.errors.NodeNotReadyError](#kafkaerrorsnobrokersavailable-and-kafkaerrorsnodenotreadyerror)
+  * [kafka.errors.KafkaTimeoutError: KafkaTimeoutError: Failed to update metadata after 60.0 secs.](#kafkaerrorskafkatimeouterror--kafkatimeouterror--failed-to-update-metadata-after-600-secs)
+  * [ssl.SSLCertVerificationError](#sslsslcertverificationerror)
 
 
 ## Installation
@@ -52,6 +55,14 @@ print(c.register_topic(topic))
 print(c.list_topics())
 ```
 Register a topic also creates it, if the topic previously does not exist.
+
+#### Block Until Ready
+`KafkaProducer` and `KafkaConsumer` would internally call `create_key` if the the connection credential is not found locally (e.g., when you first authenticated with Globus). Behind the sence, the middle service contacts AWS to initialize the asynchronous process of creating and associating the secret. The method below blocks until the credential is ready to be used by producer and consumer. When the method finishes, the producer and consumer code below should work without further waiting.
+
+```python 
+from diaspora_event_sdk import block_until_ready
+block_until_ready()
+```
 
 #### Start Producer
 
