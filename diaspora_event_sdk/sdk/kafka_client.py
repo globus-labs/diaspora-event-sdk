@@ -103,7 +103,7 @@ def block_until_ready(max_minutes=5):
     start_time = time.time()
     while len(result) < 2:  # two tests
         if retry_count > 0:
-            print("Block until connected... retry count:", retry_count, ", time passed:", int(time.time() - start_time), "seconds")
+            print(f"Block until connected or timed out ({max_minutes} minutes)... retry count:", retry_count, ", time passed:", int(time.time() - start_time), "seconds")
         producer_connection_test(result)
         consumer_connection_test(result)
         retry_count += 1
