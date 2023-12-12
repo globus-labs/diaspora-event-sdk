@@ -45,10 +45,7 @@ class Client:
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER
         )
-        tokens["access_key"], tokens["secret_key"] = (
-            resp["access_key"],
-            resp["secret_key"],
-        )
+        tokens["secret_key"] = resp["secret_key"]
         with self.login_manager._access_lock:
             self.login_manager._token_storage._connection.executemany(
                 "REPLACE INTO token_storage(namespace, resource_server, token_data_json) "
@@ -72,10 +69,40 @@ class Client:
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER
         )
-        if tokens is None or "access_key" not in tokens or "secret_key" not in tokens:
+        if tokens is None or "secret_key" not in tokens:
             return self.create_key()
         else:
             return {"username": self.subject_openid, "password": tokens["secret_key"]}
+
+    @requires_login
+    def get_secret_key(self):
+        tokens = self.login_manager._token_storage.get_token_data(
+            DIASPORA_RESOURCE_SERVER
+        )
+        if tokens is None or "secret_key" not in tokens:
+            return None
+        else:
+            return tokens["secret_key"]
+
+    @requires_login
+    def put_secret_key(self, secret_key):
+        tokens = self.login_manager._token_storage.get_token_data(
+            DIASPORA_RESOURCE_SERVER
+        )
+        tokens["secret_key"] = secret_key
+        with self.login_manager._access_lock:
+            self.login_manager._token_storage._connection.executemany(
+                "REPLACE INTO token_storage(namespace, resource_server, token_data_json) "
+                "VALUES(?, ?, ?)",
+                [
+                    (
+                        self.login_manager._token_storage.namespace,
+                        DIASPORA_RESOURCE_SERVER,
+                        json.dumps(tokens),
+                    )
+                ],
+            )
+            self.login_manager._token_storage._connection.commit()
 
     @requires_login
     def list_topics(self):

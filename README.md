@@ -53,6 +53,14 @@ c = GlobusClient()
 topic = "topic-" + c.subject_openid[-12:]
 print(c.register_topic(topic))
 print(c.list_topics())
+
+# registration_status = c.register_topic(topic)
+# print(registration_status)
+# assert registration_status["status"] in ["no-op", "success"]
+
+# registered_topics = c.list_topics()
+# print(registered_topics)
+# assert topic in registered_topics["topics"]
 ```
 Register a topic also creates it, if the topic previously does not exist.
 
@@ -119,6 +127,26 @@ print(c.retrieve_key())
 ```
 
 ### Advanced Usage
+#### Key Migration
+In case you want to use the same credential (OpenID, secret key) on the second macine, but a call to create_key() invalidates all previous keys so you cannot rely on this API for generating a new key for the new machine, while keeping the old key on the old machine valid. Starting at 0.0.19, you can call the following code to retrieve the active secret key on the first machine and store it to the second machine, so that both machines hold valid keys.
+
+On the first machine, call:
+```python
+from diaspora_event_sdk import Client as GlobusClient
+c = GlobusClient()
+print(c.get_secret_key()) # note down the secret key
+```
+
+On the second machine, call:
+```python
+from diaspora_event_sdk import Client as GlobusClient
+from diaspora_event_sdk import block_until_ready
+
+c = GlobusClient()
+c.put_secret_key("<secret-key-from-first-machine>")
+assert block_until_ready() # should unblock immediately
+```
+Note that a call to create_key() on any machine would invalidate the current key, on both machines.
 
 #### Password Refresh
 In case that you need to invalidate all previously issued passwords and generate a new one, call the `create_key` method from the `Client` class
