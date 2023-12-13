@@ -1,0 +1,25 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - "*"
+    tags:
+      - "*"
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+      - name: install requirements
+        run: |
+          python -m pip install -U pip setuptools wheel
+          python -m pip install pre-commit tox
+      - name: run pre-commit
+        run: pre-commit run -a
+      - name: mypy (sdk)
+        run: |
+          tox -e mypy
