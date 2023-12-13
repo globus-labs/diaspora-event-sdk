@@ -5,16 +5,23 @@ from diaspora_event_sdk import Client
 from diaspora_event_sdk.sdk.web_client import WebClient
 from diaspora_event_sdk.sdk.login_manager import LoginManager
 
+
 @pytest.fixture
-def mock_login_manager(): # TODO
+def mock_login_manager():  # TODO
     login_manager = Mock(spec=LoginManager())
     login_manager.get_web_client.return_value = Mock(spec=WebClient)
     login_manager.get_auth_client.return_value = Mock(
-        oauth2_userinfo=lambda: {"sub": "test_sub"})
+        oauth2_userinfo=lambda: {"sub": "test_sub"}
+    )
     login_manager._token_storage.get_token_data.return_value = {
-        'access_key': 'test_access', 'secret_key': 'test_secret'}
+        "access_key": "test_access",
+        "secret_key": "test_secret",
+    }
     login_manager.get_web_client.return_value.create_key.return_value = {
-        "status": "success", "access_key": "new_access", "secret_key": "new_secret"}
+        "status": "success",
+        "access_key": "new_access",
+        "secret_key": "new_secret",
+    }
 
     # Use MagicMock for _access_lock
     login_manager._access_lock = MagicMock()
@@ -53,7 +60,7 @@ def test_retrieve_key_missing(client, mock_login_manager):
     # the second call returns scope, resource_server, access_token, refresh_token, etc.
     mock_login_manager._token_storage.get_token_data.side_effect = [
         None,
-        {'scope': 'scope', 'resource_server': 'resource_server'}
+        {"scope": "scope", "resource_server": "resource_server"},
     ]
 
     # should internally call create_key
