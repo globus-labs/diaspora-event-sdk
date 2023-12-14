@@ -24,7 +24,7 @@
 
 ## Installation
 ### Recommended Installation with Kafka Client Library
-If you plan to utilize the `KafkaProducer` and `KafkaConsumer` classes in the SDK, which are extensions of the respective classes from the `kafka-python` library, we recommend installing the SDK with `kafka-python` support. This is especially convenient for tutorial purposes and integrating Kafka functionalities in your projects with out-of-box configurations.
+`KafkaProducer` and `KafkaConsumer` classes in the SDK enable using Diaspora Event Fabric with ready-made configurations. To use these two classes,`kafka-python` library installation is required.
 
 To install Diaspora Event SDK with `kafka-python`, run:
 ```bash
@@ -32,9 +32,9 @@ pip install "diaspora-event-sdk[kafka-python]"
 ```
 
 ### Installation Without Kafka Client Library
-For scenarios where `kafka-python` is not required or if you are using other client libraries to communicate with Kafka, you can install the SDK without this dependency.
+If you plan to use other client libraries to communicate with Kafka, you can install the SDK without `kafka-python` dependency.
 
-To install the SDK without Kafka support, simply run:
+To install the SDK without client libraries, simply run:
 ```bash
 pip install diaspora-event-sdk
 ```
