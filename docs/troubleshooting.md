@@ -46,7 +46,7 @@ New keys may take a while to become active due to AWS processing time. To preven
 ## Key Migration
 To avoid invalidating existing keys (if they're in use elsewhere), follow these steps below.
 
-#### Exporting Key from Original Machine
+### Exporting Key from Original Machine
 
 ```python
 from diaspora_event_sdk import Client as GlobusClient
@@ -54,7 +54,7 @@ c = GlobusClient()
 print(c.get_secret_key()) # Note down this key
 ```
 
-#### Importing Key on New Machine:
+### Importing Key on New Machine:
 
 ```python
 from diaspora_event_sdk import Client as GlobusClient
@@ -67,15 +67,15 @@ print(c.retrieve_key())
 assert block_until_ready()  # Should unblock in 1-10 seconds
 ```
 
-## Key Management After Re-login and Across Multiple Machines.
+## Key Management After Re-login and Across Multiple Machines
 
-#### Key Management After Logout and Login
+### Key Management After Logout and Login
 
 If you log out and then log in again, any subsequent call to `block_until_ready()` or an attempt to create a producer or consumer will internally trigger the `create_key()` function because no secret key is found in `storage.db`. This API call will invalidate all previously issued keys and retrieve a new one. 
 
 To avoid accidentally invalidating the secret key, it's recommended to use `put_secret_key()` (see above section) before calling `block_until_ready()` or creating a producer or consumer after re-login. This method allows you to manually set the secret key, ensuring that the existing key is not unintentionally invalidated.
 
-#### Managing Keys Across Multiple Machines
+### Managing Keys Across Multiple Machines
 
 If machine A is logged in with Globus Auth credentials and has the AWS secret key stored in `storage.db`, logging into machine B with the same Globus Auth credential and calling `block_until_ready()` will invalidate the key on machine A. To ensure both machines have valid secret keys, follow the section above. 
 
