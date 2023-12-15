@@ -1,41 +1,35 @@
-### QuickStart: Use SDK for Diaspora Event Fabric
-#### Basic Concepts and One-time Setup
+# Diaspora Event Fabric SDK: QuickStart
+## Basics and Setup
 
-Diaspora Event Fabric enforces topic-level access control; each topic is usually "owned" by one user and rarely more than one. To request access to a topic, use the `register_topic` API.
+Diaspora Event Fabric offers topic-level access control. Typically, only one user can access a topic. Use `register_topic` API to request access:
 
 ```python
 from diaspora_event_sdk import Client as GlobusClient
 c = GlobusClient()
-
-# or use a more meaningful name
 topic = "topic-" + c.subject_openid[-12:]
 
 print(c.register_topic(topic))
 print(c.list_topics())
 ```
-The first print should return a message with `status` as either `success` or `no-op`, and the second print should return your requested topic in the list of `topics`. If a topic for a group project has been registered by other users before, please contact Haochen or Ryan to add you to the list of owners.
+Expect `success` or `no-op` for the first print, and a list including your topic for the second. For group projects, contact Haochen or Ryan to access pre-registered topics.
 
+Aside from topic authorization, authentication requires a username (user's OpenID) and password (AWS secret key in `$HOME/.diaspora/storage.db`). If the secret key is missing (e.g., new login), `KafkaProducer` or `KafkaConsumer` instance would internally call `create_key()` to generate and store one. However, the key takes 30 seconds to 2 minutes to activate due to AWS processing.
 
-Aside from topic authorization, authentication (username and password) is needed to establish the connection. `KafkaProducer` or `KafkaConsumer` instance will use the user's OpenID as the username, and the AWS secret key stored in `$HOME/.diaspora/storage.db` as the password. If no secret key is found (e.g., when you just log in), it will call the `create_key()` API to request a new one and store the key in `storage.db`. However, when `create_key()` returns, the secret key is not immediately ready to use: it usually takes 30 seconds to 2 minutes for AWS to propagate the secret into Kafka. You will encounter timeout errors when you try to use a newly issued key before the propagation completes.
-
-One solution to avoid the confusion is to call `block_until_ready()`, which calls `create_key()` if no secret key is found in `storage.db` and tries to instantiate a producer and a consumer using the new key. The method blocks until the key is ready to use. Other solutions and advanced key management are outlined in the debug section.
+To avoid errors during this delay, use `block_until_ready()`:
 
 ```python 
 from diaspora_event_sdk import block_until_ready
 assert block_until_ready()
+# now the secret key is ready to use 
 ```
 
-This function returns False after five minutes if the connection still cannot be made but usually returns True in 30 seconds to 2 minutes, indicating the newly requested key is ready. Subsequent `block_until_ready()` calls should return in 1-10 seconds. Still, we suggest you include the code only in a testing/setup script, but not on the critical (happy) path.
+This function waits until the key activates, usually within 30 seconds to 2 minutes. Subsequent `block_until_ready()` calls should return in 1-10 seconds. Still, include this primarily in test/setup scripts, but not on the critical (happy) path.
 
 
 
+## Producing or Consuming
 
-
-
-
-#### Producing or Consuming
-
-Once the topic is registered we can publish to it. The `KafkaProducer` wraps the [Python KafkaProducer](https://kafka-python.readthedocs.io/en/master/apidoc/KafkaProducer.html) Event publication can be either synchronous or asynchronous. Below demonstrates the synchronous approach. 
+Once the topic is registered and the secret key is ready, we can publish messages to it. The `KafkaProducer` wraps the [Python KafkaProducer](https://kafka-python.readthedocs.io/en/master/apidoc/KafkaProducer.html), and event publication can be either synchronous or asynchronous. Below demonstrates the synchronous approach. 
 
 ```python
 from diaspora_event_sdk import KafkaProducer
@@ -55,13 +49,16 @@ for msg in consumer:
 ```
 
 
-#### Unregister Topic
-When you no longer use a topic, unregister it so Diaspora Event Fabric doesn't hit the hard limit of the number of topic partitions that AWS imposes.
+## Unregister Topic
+To prevent reaching AWS's limit on topic partitions, unregister a topic from Diaspora Event Fabric when it's no longer in use. Use the following code to unregister:
 
 ```python
 from diaspora_event_sdk import Client as GlobusClient
 c = GlobusClient()
 topic = "topic-" + c.subject_openid[-12:]
+
 print(c.unregister_topic(topic))
 print(c.list_topics())
 ```
+
+Once a topic is successfully unregistered, you'll lose access to it. However, it becomes available for registration and access by other users.
