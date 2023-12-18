@@ -16,7 +16,7 @@ To install the SDK without client libraries, simply run:
 ```bash
 pip install diaspora-event-sdk
 ```
-Note: This method omits the necessary dependencies for KafkaProducer and KafkaConsumer classes.
+Note: This does not install the necessary dependency for `KafkaProducer` and `KafkaConsumer` classes.
 
 ## Use Diaspora Event Fabric SDK
 

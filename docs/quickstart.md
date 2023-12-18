@@ -1,17 +1,17 @@
 # Diaspora Event Fabric SDK: QuickStart
 ## Basics and Setup
 
-Diaspora Event Fabric offers topic-level access control. Typically, only one user can access a topic. Use `register_topic` API to request access:
+Diaspora Event Fabric offers topic-level access control. Typically, only one user can access a topic. Use `register_topic` API to request access (Replace `...` below with your topic name):
 
 ```python
 from diaspora_event_sdk import Client as GlobusClient
 c = GlobusClient()
-topic = "topic-" + c.subject_openid[-12:]
+topic = ... # e.g., "topic-" + c.subject_openid[-12:]
 
 print(c.register_topic(topic))
 print(c.list_topics())
 ```
-Expect `success` or `no-op` for the first print, and a list including your topic for the second. For group projects, contact Haochen or Ryan to access pre-registered topics.
+Expect `success` or `no-op` for the first print, and a list including your topic for the second. For group projects, contact Haochen or Ryan to access topics that have been registered by others before.
 
 Aside from topic authorization, authentication requires a username (user's OpenID) and password (AWS secret key in `$HOME/.diaspora/storage.db`). If the secret key is missing (e.g., new login), `KafkaProducer` or `KafkaConsumer` instance would internally call `create_key()` to generate and store one. However, the key takes 30 seconds to 2 minutes to activate due to AWS processing.
 

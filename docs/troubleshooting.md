@@ -1,7 +1,7 @@
 # Diaspora Event Fabric SDK: Troubleshooting
 
 ## Authorization and Authentication Issues
-To confirm you have access to a topic and ensure proper authentication with Kafka, use the script below. Remember to replace `...` with your specific topic name:
+To confirm you have access to a topic and ensure proper authentication with Kafka, use the script below. Replace `...` below with your topic name:
 
 ```python
 from diaspora_event_sdk import Client as GlobusClient
