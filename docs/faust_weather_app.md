@@ -1,8 +1,8 @@
 # Topic: Use [faust](https://faust-streaming.github.io/faust/) to Process Records
 ## Producer Code
-[faust_produce.py](docs/faust_produce.py)
+[faust_produce.py](faust_produce.py)
 ## Consumer Code
-[faust_consume.py](docs/faust_consume.py)
+[faust_consume.py](faust_consume.py)
 
 ## Record Example
 ```json
