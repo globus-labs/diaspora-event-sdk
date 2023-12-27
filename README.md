@@ -23,3 +23,5 @@ Note: This does not install the necessary dependency for `KafkaProducer` and `Ka
 Please refer to our [QuickStart Guide](docs/quickstart.md) for recommended use with `kafka-python` library as well as steps to use your own Kafka client.
 
 Please refer to our [TrobleShooting Guide](docs/troubleshooting.md) for debugging common problems and effective key management strategies.
+
+[Topic: Use faust to Process Records](docs/faust_weather_app.md)
