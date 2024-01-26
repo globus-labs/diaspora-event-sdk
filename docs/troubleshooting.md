@@ -51,7 +51,7 @@ To avoid invalidating existing keys (if they're in use elsewhere), follow these 
 ```python
 from diaspora_event_sdk import Client as GlobusClient
 c = GlobusClient()
-print(c.get_secret_key()) # Note down this key
+print(c.retrieve_key()) # Note down the access key, secret key, and endpoint address.
 ```
 
 ### Importing Key on New Machine:
@@ -61,7 +61,7 @@ from diaspora_event_sdk import Client as GlobusClient
 from diaspora_event_sdk import block_until_ready
 
 c = GlobusClient()
-c.put_secret_key("<secret-key-from-first-machine>")
+c.put_secret_key("<access-key>", "<secret-key>", "<endpoint>")
 print(c.retrieve_key()) 
 
 assert block_until_ready()  # Should unblock in 1-10 seconds

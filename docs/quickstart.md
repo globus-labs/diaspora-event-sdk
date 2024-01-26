@@ -69,14 +69,14 @@ If you're opting to use a custom Kafka client library, here are the necessary cl
 
 | Configuration     | Value                                                               |
 | ----------------- | ------------------------------------------------------------------- |
-| Bootstrap Servers | [`MSK_SCRAM_ENDPOINT`](/diaspora_event_sdk/sdk/_environments.py#L6) |
+| Bootstrap Servers | (See instructions below) |
 | Security Protocol | `SASL_SSL`                                                          |
-| Sasl Mechanism    | `SCRAM-SHA-512`                                                     |
+| Sasl Mechanism    | `OAUTHBEARER`                                                     |
 | Api Version       | `3.5.1`                                                             |
 | Username          | (See instructions below)                                            |
 | Password          | (See instructions below)                                            |
 
-Your Kafka cluster username is your OpenID, and the password is the active AWS secret key. Please refer to our [TroubleShooting Guide](docs/troubleshooting.md) for secret key management.
+The bootstrap server address, OAuth access key, and OAuth secret key can be retrieved through `retrieve_key()` and invalidated through `create_key()`. Please refer to our [TroubleShooting Guide](docs/troubleshooting.md) for secret key management.
 ```python
 from diaspora_event_sdk import Client as GlobusClient
 c = GlobusClient()
