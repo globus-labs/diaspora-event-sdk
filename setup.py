@@ -38,5 +38,8 @@ setup(
     install_requires=[
         "globus-sdk>=3.20.1,<4",
     ],
-    extras_require={"kafka-python": ["kafka-python"], "test": TEST_REQUIRES},
+    extras_require={
+        "kafka-python": ["kafka-python", "aws-msk-iam-sasl-signer-python"],
+        "test": TEST_REQUIRES,
+    },
 )

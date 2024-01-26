@@ -41,11 +41,12 @@ class Client:
         resp = self.web_client.create_key(self.subject_openid)
         if resp["status"] == "error":
             raise Exception("should not happen")
-
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER
         )
+        tokens["access_key"] = resp["access_key"]
         tokens["secret_key"] = resp["secret_key"]
+        tokens["endpoint"] = resp["endpoint"]
         with self.login_manager._access_lock:
             self.login_manager._token_storage._connection.executemany(
                 "REPLACE INTO token_storage(namespace, resource_server, token_data_json) "
@@ -59,7 +60,11 @@ class Client:
                 ],
             )
             self.login_manager._token_storage._connection.commit()
-        return {"username": self.subject_openid, "password": tokens["secret_key"]}
+        return {
+            "access_key": tokens["access_key"],
+            "secret_key": tokens["secret_key"],
+            "endpoint": tokens["endpoint"],
+        }
 
     @requires_login
     def retrieve_key(self):
@@ -69,12 +74,21 @@ class Client:
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER
         )
-        if tokens is None or "secret_key" not in tokens:
+        if (
+            tokens is None
+            or "endpoint" not in tokens
+            or "access_key" not in tokens
+            or "secret_key" not in tokens
+        ):
             return self.create_key()
         else:
-            return {"username": self.subject_openid, "password": tokens["secret_key"]}
+            return {
+                "access_key": tokens["access_key"],
+                "secret_key": tokens["secret_key"],
+                "endpoint": tokens["endpoint"],
+            }
 
-    @requires_login
+    @requires_login  # TODO
     def get_secret_key(self):
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER
@@ -84,7 +98,7 @@ class Client:
         else:
             return tokens["secret_key"]
 
-    @requires_login
+    @requires_login  # TODO
     def put_secret_key(self, secret_key):
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER

@@ -3,7 +3,6 @@ from typing import Dict, Any
 import warnings
 import time
 
-from ._environments import MSK_SCRAM_ENDPOINT
 from .client import Client
 
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
@@ -11,7 +10,13 @@ kafka_available = True
 try:
     from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
     from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
+    from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
+    import os
 
+    class MSKTokenProvider:
+        def token(self):
+            token, _ = MSKAuthTokenProvider.generate_auth_token("us-east-1")
+            return token
 except ImportError:
     kafka_available = False
 
@@ -23,16 +28,17 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
     """
     try:
         keys = Client().retrieve_key()
+        os.environ["AWS_ACCESS_KEY_ID"] = keys["access_key"]
+        os.environ["AWS_SECRET_ACCESS_KEY"] = keys["secret_key"]
     except Exception as e:
         raise RuntimeError("Failed to retrieve Kafka keys") from e
 
     conf = {
-        "bootstrap_servers": MSK_SCRAM_ENDPOINT,
+        "bootstrap_servers": keys["endpoint"],
         "security_protocol": "SASL_SSL",
-        "sasl_mechanism": "SCRAM-SHA-512",
+        "sasl_mechanism": "OAUTHBEARER",
         "api_version": (3, 5, 1),
-        "sasl_plain_username": keys["username"],
-        "sasl_plain_password": keys["password"],
+        "sasl_oauth_token_provider": MSKTokenProvider(),
     }
     conf.update(extra_configs)
     return conf
@@ -103,7 +109,13 @@ def block_until_ready(max_minutes=5):
     start_time = time.time()
     while len(result) < 2:  # two tests
         if retry_count > 0:
-            print(f"Block until connected or timed out ({max_minutes} minutes)... retry count:", retry_count, ", time passed:", int(time.time() - start_time), "seconds")
+            print(
+                f"Block until connected or timed out ({max_minutes} minutes)... retry count:",
+                retry_count,
+                ", time passed:",
+                int(time.time() - start_time),
+                "seconds",
+            )
         producer_connection_test(result)
         consumer_connection_test(result)
         retry_count += 1
