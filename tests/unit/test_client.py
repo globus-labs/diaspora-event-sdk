@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from unittest.mock import MagicMock
 from diaspora_event_sdk import Client
 from diaspora_event_sdk.sdk.web_client import WebClient
