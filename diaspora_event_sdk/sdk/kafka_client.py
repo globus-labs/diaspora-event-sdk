@@ -10,7 +10,7 @@ kafka_available = True
 try:
     from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
     from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
-    from aws_msk_iam_sasl_signer import MSKAuthTokenProvider
+    from aws_msk_iam_sasl_signer import MSKAuthTokenProvider  # type: ignore[import,import-not-found]
     import os
 
     class MSKTokenProvider:
