@@ -56,6 +56,7 @@ if kafka_available:
     class KafkaConsumer(KCons):
         def __init__(self, *topics, **configs):
             super().__init__(*topics, **get_diaspora_config(configs))
+
 else:
     # Create dummy classes that issue a warning when instantiated
     class KafkaProducer:  # type: ignore[no-redef]

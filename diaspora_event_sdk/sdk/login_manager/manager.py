@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 def _get_diaspora_all_scope() -> str:
     return os.getenv(
         "DIASPORA_SCOPE",
-        f"https://auth.globus.org/scopes/{DIASPORA_RESOURCE_SERVER}/action_all"
+        f"https://auth.globus.org/scopes/{DIASPORA_RESOURCE_SERVER}/action_all",
     )
 
 
@@ -57,8 +57,7 @@ class LoginManager:
     }
 
     def __init__(self, *, environment: str | None = None) -> None:
-        self._token_storage = get_token_storage_adapter(
-            environment=environment)
+        self._token_storage = get_token_storage_adapter(environment=environment)
         self._access_lock = threading.Lock()
 
     @property
