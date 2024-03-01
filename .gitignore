@@ -133,3 +133,4 @@ venv.bak/
 # MacOS Finder Cache
 .DS_Store
 test.py
+lambda_function.py

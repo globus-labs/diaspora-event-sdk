@@ -150,11 +150,12 @@ class Client:
         return self.web_client.list_functions(self.subject_openid)
 
     @requires_login
-    def register_function(self, topic, function):
+    def register_function(self, topic, function, function_runtime, function_handler, function_body):
         """
         Registers a new functions under the user's OpenID.
         """
-        return self.web_client.register_function(self.subject_openid, topic, function)
+        return self.web_client.register_function(self.subject_openid, topic, function,
+                                                 function_runtime, function_handler, function_body)
 
     @requires_login
     def unregister_function(self, topic, function):

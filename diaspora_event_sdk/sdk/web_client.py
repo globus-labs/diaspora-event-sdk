@@ -47,10 +47,16 @@ class WebClient(globus_sdk.BaseClient):
         return self.get("/v1/list_functions", headers={"Subject": str(subject)})
 
     def register_function(
-        self, subject: UUID_LIKE_T, topic: str, function: str
+        self, subject: UUID_LIKE_T, topic: str, function: str,
+        function_runtime: str, function_handler: str, function_body: str
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.post(
-            "/v1/register_function", headers={"Subject": str(subject), "Topic": topic, "Function": function}
+            "/v1/register_function",
+            headers={"Subject": str(subject), "Topic": topic,
+                     "Function": function},
+            data={"function_runtime": function_runtime,
+                  "function_handler": function_handler,
+                  "function_body": function_body}
         )
 
     def unregister_function(
