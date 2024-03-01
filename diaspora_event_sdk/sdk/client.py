@@ -25,7 +25,8 @@ class Client:
             self.login_manager = LoginManager(environment=environment)
             self.login_manager.ensure_logged_in()
 
-        self.web_client = self.login_manager.get_web_client(base_url=TOKEN_EXCHANGE)
+        self.web_client = self.login_manager.get_web_client(
+            base_url=TOKEN_EXCHANGE)
         self.auth_client = self.login_manager.get_auth_client()
         self.subject_openid = self.auth_client.oauth2_userinfo()["sub"]
 
@@ -140,3 +141,24 @@ class Client:
         Unregisters a topic from the user's OpenID.
         """
         return self.web_client.unregister_topic(self.subject_openid, topic)
+
+    @requires_login
+    def list_functions(self):
+        """
+        Retrieves the list of functions associated with the user's OpenID.
+        """
+        return self.web_client.list_functions(self.subject_openid)
+
+    @requires_login
+    def register_function(self, topic, function):
+        """
+        Registers a new functions under the user's OpenID.
+        """
+        return self.web_client.register_function(self.subject_openid, topic, function)
+
+    @requires_login
+    def unregister_function(self, topic, function):
+        """
+        Unregisters a functions from the user's OpenID.
+        """
+        return self.web_client.unregister_function(self.subject_openid, topic, function)
