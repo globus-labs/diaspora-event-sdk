@@ -65,3 +65,12 @@ class WebClient(globus_sdk.BaseClient):
         return self.post(
             "/v1/unregister_function", headers={"Subject": str(subject), "Topic": topic, "Function": function}
         )
+    
+    def update_function_trigger(
+        self, subject: UUID_LIKE_T, trigger_uuid: UUID_LIKE_T, trigger_configs: dict
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            "/v1/update_function_trigger", 
+            headers={"Subject": str(subject), "Trigger": str(trigger_uuid)},
+            data=trigger_configs
+        )

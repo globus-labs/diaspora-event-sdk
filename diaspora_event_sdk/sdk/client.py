@@ -163,3 +163,10 @@ class Client:
         Unregisters a functions from the user's OpenID.
         """
         return self.web_client.unregister_function(self.subject_openid, topic, function)
+    
+    @requires_login
+    def update_trigger_config(self, trigger_uuid, trigger_configs):
+        """
+        Update a functions's trigger'.
+        """
+        return self.web_client.update_function_trigger(self.subject_openid, trigger_uuid, trigger_configs)
