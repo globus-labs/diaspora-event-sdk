@@ -48,15 +48,13 @@ class WebClient(globus_sdk.BaseClient):
 
     def register_function(
         self, subject: UUID_LIKE_T, topic: str, function: str,
-        function_runtime: str, function_handler: str, function_body: str
+        function_configs: dict
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.post(
             "/v1/register_function",
             headers={"Subject": str(subject), "Topic": topic,
                      "Function": function},
-            data={"function_runtime": function_runtime,
-                  "function_handler": function_handler,
-                  "function_body": function_body}
+            data=function_configs
         )
 
     def unregister_function(
@@ -65,12 +63,12 @@ class WebClient(globus_sdk.BaseClient):
         return self.post(
             "/v1/unregister_function", headers={"Subject": str(subject), "Topic": topic, "Function": function}
         )
-    
+
     def update_function_trigger(
         self, subject: UUID_LIKE_T, trigger_uuid: UUID_LIKE_T, trigger_configs: dict
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.post(
-            "/v1/update_function_trigger", 
+            "/v1/update_function_trigger",
             headers={"Subject": str(subject), "Trigger": str(trigger_uuid)},
             data=trigger_configs
         )
