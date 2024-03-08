@@ -132,7 +132,8 @@ venv.bak/
 
 # MacOS Finder Cache
 .DS_Store
+lambda_function*
+my_deployment_package*
 test.py
-lambda_function.py
-my_deployment_package
-my_deployment_package.zip
+test1.py
+test2.py
