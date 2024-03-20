@@ -156,7 +156,6 @@ class Client:
         """
         return self.web_client.unregister_topic_for_user(self.subject_openid, topic, user)
 
-
     @requires_login
     def list_functions(self):
         """
@@ -177,10 +176,38 @@ class Client:
         Unregisters a functions from the user's OpenID.
         """
         return self.web_client.unregister_function(self.subject_openid, topic, function)
-    
+
     @requires_login
     def update_trigger_config(self, trigger_uuid, trigger_configs):
         """
         Update a functions's trigger'.
         """
         return self.web_client.update_function_trigger(self.subject_openid, trigger_uuid, trigger_configs)
+
+    @requires_login
+    def get_identities(self):
+        """
+        Get the user identities.
+        """
+        return self.web_client.get_identities(self.subject_openid)
+
+    @requires_login
+    def get_topic_configs(self, topic, configs):
+        """
+        Get topic configurations.
+        """
+        return self.web_client.get_topic_configs(self.subject_openid, topic, configs)
+
+    @requires_login
+    def set_topic_configs(self, topic, configs):
+        """
+        Set topic configurations.
+        """
+        return self.web_client.set_topic_configs(self.subject_openid, topic, configs)
+
+    @requires_login
+    def create_partitions(self, topic, new_partitions):
+        """
+        Set topic configurations.
+        """
+        return self.web_client.create_partitions(self.subject_openid, topic, new_partitions)

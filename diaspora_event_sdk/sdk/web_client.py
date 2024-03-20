@@ -90,3 +90,38 @@ class WebClient(globus_sdk.BaseClient):
             headers={"Subject": str(subject), "Trigger": str(trigger_uuid)},
             data=trigger_configs
         )
+
+    def get_identities(
+        self, subject: UUID_LIKE_T
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            "/v1/get_identities",
+            headers={"Subject": str(subject)}
+        )
+
+    def get_topic_configs(
+        self, subject: UUID_LIKE_T, topic: str, configs: dict
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            "/v1/get_topic_configs",
+            headers={"Subject": str(subject), "Topic": topic},
+            data=configs
+        )
+
+    def set_topic_configs(
+        self, subject: UUID_LIKE_T, topic: str, configs: dict
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            "/v1/set_topic_configs",
+            headers={"Subject": str(subject), "Topic": topic},
+            data=configs
+        )
+
+    def create_partitions(
+        self, subject: UUID_LIKE_T, topic: str, new_partitions: int
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            "/v1/create_partitions",
+            headers={"Subject": str(subject), "Topic": topic,
+                     "NewPartitions": str(new_partitions)},
+        )
