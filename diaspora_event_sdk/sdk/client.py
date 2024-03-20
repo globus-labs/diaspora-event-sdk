@@ -208,6 +208,6 @@ class Client:
     @requires_login
     def create_partitions(self, topic, new_partitions):
         """
-        Set topic configurations.
+        Adjust topic number of partitions
         """
         return self.web_client.create_partitions(self.subject_openid, topic, new_partitions)
