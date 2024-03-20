@@ -143,6 +143,21 @@ class Client:
         return self.web_client.unregister_topic(self.subject_openid, topic)
 
     @requires_login
+    def register_topic_for_user(self, topic, user):
+        """
+        Registers a new topic under the user's OpenID.
+        """
+        return self.web_client.register_topic_for_user(self.subject_openid, topic, user)
+
+    @requires_login
+    def unregister_topic_for_user(self, topic, user):
+        """
+        Unregisters a topic from the user's OpenID.
+        """
+        return self.web_client.unregister_topic_for_user(self.subject_openid, topic, user)
+
+
+    @requires_login
     def list_functions(self):
         """
         Retrieves the list of functions associated with the user's OpenID.
