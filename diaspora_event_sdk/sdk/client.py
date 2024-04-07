@@ -133,81 +133,74 @@ class Client:
         """
         Registers a new topic under the user's OpenID.
         """
-        return self.web_client.register_topic(self.subject_openid, topic)
+        return self.web_client.register_topic(self.subject_openid, topic, "register")
 
     @requires_login
     def unregister_topic(self, topic):
         """
         Unregisters a topic from the user's OpenID.
         """
-        return self.web_client.unregister_topic(self.subject_openid, topic)
+        return self.web_client.register_topic(self.subject_openid, topic, "unregister")
+
+    @requires_login
+    def get_topic_configs(self, topic):
+        """
+        Get topic configurations.
+        """
+        return self.web_client.get_topic_configs(self.subject_openid, topic)
+
+    @requires_login
+    def update_topic_configs(self, topic, configs):
+        """
+        Set topic configurations.
+        """
+        return self.web_client.update_topic_configs(self.subject_openid, topic, configs)
+
+    @requires_login
+    def update_topic_partitions(self, topic, new_partitions):
+        """
+        Adjust topic number of partitions
+        """
+        return self.web_client.update_topic_partitions(self.subject_openid, topic, new_partitions)
 
     @requires_login
     def register_topic_for_user(self, topic, user):
         """
         Registers a new topic under the user's OpenID.
         """
-        return self.web_client.register_topic_for_user(self.subject_openid, topic, user)
+        return self.web_client.register_topic_for_user(self.subject_openid, topic, user, "register")
 
     @requires_login
     def unregister_topic_for_user(self, topic, user):
         """
         Unregisters a topic from the user's OpenID.
         """
-        return self.web_client.unregister_topic_for_user(self.subject_openid, topic, user)
+        return self.web_client.register_topic_for_user(self.subject_openid, topic, user, "unregister")
 
     @requires_login
-    def list_functions(self):
+    def list_triggers(self):
         """
         Retrieves the list of functions associated with the user's OpenID.
         """
-        return self.web_client.list_functions(self.subject_openid)
+        return self.web_client.list_triggers(self.subject_openid)
 
     @requires_login
-    def register_function(self, topic, function, function_configs):
+    def create_trigger(self, topic, function, function_configs):
         """
         Registers a new functions under the user's OpenID.
         """
-        return self.web_client.register_function(self.subject_openid, topic, function, function_configs)
+        return self.web_client.create_trigger(self.subject_openid, topic, function, "create", function_configs)
 
     @requires_login
-    def unregister_function(self, topic, function):
+    def delete_trigger(self, topic, function):
         """
         Unregisters a functions from the user's OpenID.
         """
-        return self.web_client.unregister_function(self.subject_openid, topic, function)
+        return self.web_client.create_trigger(self.subject_openid, topic, function, "delete", {})
 
     @requires_login
-    def update_trigger_config(self, trigger_uuid, trigger_configs):
+    def update_trigger(self, trigger_uuid, trigger_configs):
         """
         Update a functions's trigger'.
         """
-        return self.web_client.update_function_trigger(self.subject_openid, trigger_uuid, trigger_configs)
-
-    @requires_login
-    def get_identities(self):
-        """
-        Get the user identities.
-        """
-        return self.web_client.get_identities(self.subject_openid)
-
-    @requires_login
-    def get_topic_configs(self, topic, configs):
-        """
-        Get topic configurations.
-        """
-        return self.web_client.get_topic_configs(self.subject_openid, topic, configs)
-
-    @requires_login
-    def set_topic_configs(self, topic, configs):
-        """
-        Set topic configurations.
-        """
-        return self.web_client.set_topic_configs(self.subject_openid, topic, configs)
-
-    @requires_login
-    def create_partitions(self, topic, new_partitions):
-        """
-        Adjust topic number of partitions
-        """
-        return self.web_client.create_partitions(self.subject_openid, topic, new_partitions)
+        return self.web_client.update_trigger(self.subject_openid, trigger_uuid, trigger_configs)

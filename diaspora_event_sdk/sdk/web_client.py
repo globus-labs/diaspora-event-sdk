@@ -1,5 +1,5 @@
 from typing import Optional
-
+import json
 import globus_sdk
 from diaspora_event_sdk.sdk.utils.uuid_like import UUID_LIKE_T
 
@@ -24,104 +24,76 @@ class WebClient(globus_sdk.BaseClient):
         self.user_app_name = app_name
 
     def create_key(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
-        return self.post("/v1/create_key", headers={"Subject": str(subject)})
+        return self.get("/api/v2/create_key", headers={"Subject": str(subject)})
 
     def list_topics(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
-        return self.get("/v1/list_topics", headers={"Subject": str(subject)})
+        return self.get("/api/v2/topics", headers={"Subject": str(subject)})
 
     def register_topic(
-        self, subject: UUID_LIKE_T, topic: str
+        self, subject: UUID_LIKE_T, topic: str, action: str
     ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/register_topic", headers={"Subject": str(subject), "Topic": topic}
-        )
-
-    def unregister_topic(
-        self, subject: UUID_LIKE_T, topic: str
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/unregister_topic", headers={"Subject": str(subject), "Topic": topic}
-        )
-
-    def register_topic_for_user(
-        self, subject: UUID_LIKE_T, topic: str, user: UUID_LIKE_T
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/register_topic_for_user",
-            headers={"Subject": str(
-                subject), "Topic": topic, "User": str(user)}
-        )
-
-    def unregister_topic_for_user(
-        self, subject: UUID_LIKE_T, topic: str, user: UUID_LIKE_T
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/unregister_topic_for_user",
-            headers={"Subject": str(
-                subject), "Topic": topic, "User": str(user)}
-        )
-
-    def list_functions(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
-        return self.get("/v1/list_functions", headers={"Subject": str(subject)})
-
-    def register_function(
-        self, subject: UUID_LIKE_T, topic: str, function: str,
-        function_configs: dict
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/register_function",
-            headers={"Subject": str(subject), "Topic": topic,
-                     "Function": function},
-            data=function_configs
-        )
-
-    def unregister_function(
-        self, subject: UUID_LIKE_T, topic: str, function: str
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/unregister_function", headers={"Subject": str(subject), "Topic": topic, "Function": function}
-        )
-
-    def update_function_trigger(
-        self, subject: UUID_LIKE_T, trigger_uuid: UUID_LIKE_T, trigger_configs: dict
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/update_function_trigger",
-            headers={"Subject": str(subject), "Trigger": str(trigger_uuid)},
-            data=trigger_configs
-        )
-
-    def get_identities(
-        self, subject: UUID_LIKE_T
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/get_identities",
-            headers={"Subject": str(subject)}
+        return self.put(
+            f"/api/v2/topic/{topic}", headers={"Subject": str(subject), "Action": action}
         )
 
     def get_topic_configs(
+        self, subject: UUID_LIKE_T, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.get(
+            f"/api/v2/topic/{topic}",
+            headers={"Subject": str(subject), "Topic": topic},
+            # data=json.dumps(configs).encode("utf-8")
+        )
+
+    def update_topic_configs(
         self, subject: UUID_LIKE_T, topic: str, configs: dict
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.post(
-            "/v1/get_topic_configs",
-            headers={"Subject": str(subject), "Topic": topic},
-            data=configs
+            f"/api/v2/topic/{topic}",
+            headers={"Subject": str(subject), "Topic": topic,
+                     "Content-Type": "text/plain"},
+            data=json.dumps(configs).encode("utf-8")
         )
 
-    def set_topic_configs(
-        self, subject: UUID_LIKE_T, topic: str, configs: dict
-    ) -> globus_sdk.GlobusHTTPResponse:
-        return self.post(
-            "/v1/set_topic_configs",
-            headers={"Subject": str(subject), "Topic": topic},
-            data=configs
-        )
-
-    def create_partitions(
+    def update_topic_partitions(
         self, subject: UUID_LIKE_T, topic: str, new_partitions: int
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.post(
-            "/v1/create_partitions",
+            f"/api/v2/topic/{topic}/partitions",
             headers={"Subject": str(subject), "Topic": topic,
                      "NewPartitions": str(new_partitions)},
+        )
+
+    def register_topic_for_user(
+        self, subject: UUID_LIKE_T, topic: str, user: UUID_LIKE_T, action: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            f"/api/v2/topic/{topic}/user",
+            headers={"Subject": str(subject), "Action": action,
+                     "Topic": topic, "User": str(user)}
+        )
+
+    def list_triggers(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
+        return self.get("/api/v2/triggers", headers={"Subject": str(subject)})
+
+    def create_trigger(
+        self, subject: UUID_LIKE_T, topic: str, function: str, action: str,
+        function_configs: dict
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.put(
+            "/api/v2/trigger",
+            headers={"Subject": str(subject), "Topic": topic,
+                     "Trigger": function, "Action": action,
+                     "Content-Type": "text/plain"},
+            data=json.dumps(function_configs).encode("utf-8")
+        )
+
+    def update_trigger(
+        self, subject: UUID_LIKE_T, trigger_uuid: UUID_LIKE_T, trigger_configs: dict
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            f"/api/v2/triggers/{trigger_uuid}",
+            headers={"Subject": str(subject), "Trigger_id": str(trigger_uuid),
+                     "Content-Type": "text/plain"},
+            data=json.dumps(trigger_configs).encode("utf-8")
         )
