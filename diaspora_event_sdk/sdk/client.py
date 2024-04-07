@@ -89,16 +89,6 @@ class Client:
                 "endpoint": tokens["endpoint"],
             }
 
-    # @requires_login  # TODO
-    # def get_secret_key(self):
-    #     tokens = self.login_manager._token_storage.get_token_data(
-    #         DIASPORA_RESOURCE_SERVER
-    #     )
-    #     if tokens is None or "secret_key" not in tokens:
-    #         return None
-    #     else:
-    #         return tokens["secret_key"]
-
     @requires_login
     def put_secret_key(self, access_key, secret_key, endpoint):
         tokens = self.login_manager._token_storage.get_token_data(
