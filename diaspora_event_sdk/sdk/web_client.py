@@ -64,7 +64,7 @@ class WebClient(globus_sdk.BaseClient):
                      "NewPartitions": str(new_partitions)},
         )
 
-    def register_topic_for_user(
+    def grant_user_access(
         self, subject: UUID_LIKE_T, topic: str, user: UUID_LIKE_T, action: str
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.post(

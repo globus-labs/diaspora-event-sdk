@@ -154,18 +154,18 @@ class Client:
         return self.web_client.update_topic_partitions(self.subject_openid, topic, new_partitions)
 
     @requires_login
-    def register_topic_for_user(self, topic, user):
+    def grant_user_access(self, topic, user):
         """
         Registers a new topic under the user's OpenID.
         """
-        return self.web_client.register_topic_for_user(self.subject_openid, topic, user, "register")
+        return self.web_client.grant_user_access(self.subject_openid, topic, user, "grant")
 
     @requires_login
-    def unregister_topic_for_user(self, topic, user):
+    def revoke_user_access(self, topic, user):
         """
         Unregisters a topic from the user's OpenID.
         """
-        return self.web_client.register_topic_for_user(self.subject_openid, topic, user, "unregister")
+        return self.web_client.grant_user_access(self.subject_openid, topic, user, "revoke")
 
     @requires_login
     def list_triggers(self):
