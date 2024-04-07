@@ -89,16 +89,6 @@ class Client:
                 "endpoint": tokens["endpoint"],
             }
 
-    # @requires_login  # TODO
-    # def get_secret_key(self):
-    #     tokens = self.login_manager._token_storage.get_token_data(
-    #         DIASPORA_RESOURCE_SERVER
-    #     )
-    #     if tokens is None or "secret_key" not in tokens:
-    #         return None
-    #     else:
-    #         return tokens["secret_key"]
-
     @requires_login
     def put_secret_key(self, access_key, secret_key, endpoint):
         tokens = self.login_manager._token_storage.get_token_data(
@@ -133,81 +123,74 @@ class Client:
         """
         Registers a new topic under the user's OpenID.
         """
-        return self.web_client.register_topic(self.subject_openid, topic)
+        return self.web_client.register_topic(self.subject_openid, topic, "register")
 
     @requires_login
     def unregister_topic(self, topic):
         """
         Unregisters a topic from the user's OpenID.
         """
-        return self.web_client.unregister_topic(self.subject_openid, topic)
+        return self.web_client.register_topic(self.subject_openid, topic, "unregister")
 
     @requires_login
-    def register_topic_for_user(self, topic, user):
-        """
-        Registers a new topic under the user's OpenID.
-        """
-        return self.web_client.register_topic_for_user(self.subject_openid, topic, user)
-
-    @requires_login
-    def unregister_topic_for_user(self, topic, user):
-        """
-        Unregisters a topic from the user's OpenID.
-        """
-        return self.web_client.unregister_topic_for_user(self.subject_openid, topic, user)
-
-    @requires_login
-    def list_functions(self):
-        """
-        Retrieves the list of functions associated with the user's OpenID.
-        """
-        return self.web_client.list_functions(self.subject_openid)
-
-    @requires_login
-    def register_function(self, topic, function, function_configs):
-        """
-        Registers a new functions under the user's OpenID.
-        """
-        return self.web_client.register_function(self.subject_openid, topic, function, function_configs)
-
-    @requires_login
-    def unregister_function(self, topic, function):
-        """
-        Unregisters a functions from the user's OpenID.
-        """
-        return self.web_client.unregister_function(self.subject_openid, topic, function)
-
-    @requires_login
-    def update_trigger_config(self, trigger_uuid, trigger_configs):
-        """
-        Update a functions's trigger'.
-        """
-        return self.web_client.update_function_trigger(self.subject_openid, trigger_uuid, trigger_configs)
-
-    @requires_login
-    def get_identities(self):
-        """
-        Get the user identities.
-        """
-        return self.web_client.get_identities(self.subject_openid)
-
-    @requires_login
-    def get_topic_configs(self, topic, configs):
+    def get_topic_configs(self, topic):
         """
         Get topic configurations.
         """
-        return self.web_client.get_topic_configs(self.subject_openid, topic, configs)
+        return self.web_client.get_topic_configs(self.subject_openid, topic)
 
     @requires_login
-    def set_topic_configs(self, topic, configs):
+    def update_topic_configs(self, topic, configs):
         """
         Set topic configurations.
         """
-        return self.web_client.set_topic_configs(self.subject_openid, topic, configs)
+        return self.web_client.update_topic_configs(self.subject_openid, topic, configs)
 
     @requires_login
-    def create_partitions(self, topic, new_partitions):
+    def update_topic_partitions(self, topic, new_partitions):
         """
         Adjust topic number of partitions
         """
-        return self.web_client.create_partitions(self.subject_openid, topic, new_partitions)
+        return self.web_client.update_topic_partitions(self.subject_openid, topic, new_partitions)
+
+    @requires_login
+    def grant_user_access(self, topic, user):
+        """
+        Registers a new topic under the user's OpenID.
+        """
+        return self.web_client.grant_user_access(self.subject_openid, topic, user, "grant")
+
+    @requires_login
+    def revoke_user_access(self, topic, user):
+        """
+        Unregisters a topic from the user's OpenID.
+        """
+        return self.web_client.grant_user_access(self.subject_openid, topic, user, "revoke")
+
+    @requires_login
+    def list_triggers(self):
+        """
+        Retrieves the list of functions associated with the user's OpenID.
+        """
+        return self.web_client.list_triggers(self.subject_openid)
+
+    @requires_login
+    def create_trigger(self, topic, function, function_configs):
+        """
+        Registers a new functions under the user's OpenID.
+        """
+        return self.web_client.create_trigger(self.subject_openid, topic, function, "create", function_configs)
+
+    @requires_login
+    def delete_trigger(self, topic, function):
+        """
+        Unregisters a functions from the user's OpenID.
+        """
+        return self.web_client.create_trigger(self.subject_openid, topic, function, "delete", {})
+
+    @requires_login
+    def update_trigger(self, trigger_uuid, trigger_configs):
+        """
+        Update a functions's trigger'.
+        """
+        return self.web_client.update_trigger(self.subject_openid, trigger_uuid, trigger_configs)
