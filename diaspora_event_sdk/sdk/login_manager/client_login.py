@@ -1,7 +1,7 @@
 """
-Logic for using client identities with the Diaspora Event SDK
+Logic for using client identities with the Diaspora SDK
 
-This is based on the Globus CLI client login:
+The design is based on the Globus CLI client login:
 https://github.com/globus/globus-cli/blob/main/src/globus_cli/login_manager/client_login.py
 """
 from __future__ import annotations
@@ -9,13 +9,14 @@ from __future__ import annotations
 import logging
 import os
 import uuid
+from typing import Union
 
 import globus_sdk
 
 log = logging.getLogger(__name__)
 
 
-def _get_client_creds_from_env() -> tuple[str | None, str | None]:
+def _get_client_creds_from_env() -> tuple[Union[str, None], Union[str, None]]:
     client_id = os.getenv("DIASPORA_SDK_CLIENT_ID")
     client_secret = os.getenv("DIASPORA_SDK_CLIENT_SECRET")
     return client_id, client_secret

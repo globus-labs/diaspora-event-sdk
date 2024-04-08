@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import platform
+from typing import List
 
 from .globus_auth import internal_auth_client
 
 
-def do_link_auth_flow(scopes: list[str]):
+def do_link_auth_flow(scopes: List[str]):
     auth_client = internal_auth_client()
 
     # start the Confidential App Grant flow
