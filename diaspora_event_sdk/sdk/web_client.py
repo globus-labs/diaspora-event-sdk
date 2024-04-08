@@ -78,14 +78,15 @@ class WebClient(globus_sdk.BaseClient):
 
     def create_trigger(
         self, subject: UUID_LIKE_T, topic: str, function: str, action: str,
-        function_configs: dict
+        function_configs: dict, trigger_configs: dict
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.put(
             "/api/v2/trigger",
             headers={"Subject": str(subject), "Topic": topic,
                      "Trigger": function, "Action": action,
                      "Content-Type": "text/plain"},
-            data=json.dumps(function_configs).encode("utf-8")
+            data=json.dumps({"function": function_configs,
+                             "trigger": trigger_configs}).encode("utf-8")
         )
 
     def update_trigger(
