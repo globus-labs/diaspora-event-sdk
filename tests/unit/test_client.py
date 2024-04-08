@@ -91,10 +91,10 @@ def test_list_topics(client):
 def test_register_topic(client):
     topic = "test_topic"
     client.register_topic(topic)
-    client.web_client.register_topic.assert_called_with("test_sub", topic)
+    client.web_client.register_topic.assert_called_with("test_sub", topic, "register")
 
 
 def test_unregister_topic(client):
     topic = "test_topic"
     client.unregister_topic(topic)
-    client.web_client.unregister_topic.assert_called_with("test_sub", topic)
+    client.web_client.register_topic.assert_called_with("test_sub", topic, "unregister")
