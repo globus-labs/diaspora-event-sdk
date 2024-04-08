@@ -175,18 +175,20 @@ class Client:
         return self.web_client.list_triggers(self.subject_openid)
 
     @requires_login
-    def create_trigger(self, topic, function, function_configs):
+    def create_trigger(self, topic, function, function_configs, trigger_configs):
         """
         Registers a new functions under the user's OpenID.
         """
-        return self.web_client.create_trigger(self.subject_openid, topic, function, "create", function_configs)
+        return self.web_client.create_trigger(self.subject_openid, topic, function, "create",
+                                              function_configs, trigger_configs)
 
     @requires_login
     def delete_trigger(self, topic, function):
         """
         Unregisters a functions from the user's OpenID.
         """
-        return self.web_client.create_trigger(self.subject_openid, topic, function, "delete", {})
+        return self.web_client.create_trigger(self.subject_openid, topic, function, "delete",
+                                              {}, {})
 
     @requires_login
     def update_trigger(self, trigger_uuid, trigger_configs):
