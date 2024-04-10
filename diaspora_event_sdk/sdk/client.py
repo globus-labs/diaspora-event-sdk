@@ -37,7 +37,7 @@ class Client:
     @requires_login
     def create_key(self):
         """
-        Invalidate previous keys (if any) and generate a new one
+        Revokes existing keys, generates a new key, and updates the token storage with the newly created key and the Diaspora endpoint.
         """
         resp = self.web_client.create_key(self.subject_openid)
         if resp["status"] == "error":
@@ -70,7 +70,7 @@ class Client:
     @requires_login
     def retrieve_key(self):
         """
-        Attempt to retrieve the key from local token storage, and call create_key if local key is not found
+        Retrieves the key from local token storage, and calls create_key() if the local key is not found.
         """
         tokens = self.login_manager._token_storage.get_token_data(
             DIASPORA_RESOURCE_SERVER
@@ -114,85 +114,85 @@ class Client:
     @requires_login
     def list_topics(self):
         """
-        Retrieves the list of topics associated with the user's OpenID.
+        Returns a list of topics currently registered under the user's account.
         """
         return self.web_client.list_topics(self.subject_openid)
 
     @requires_login
     def register_topic(self, topic):
         """
-        Registers a new topic under the user's OpenID.
+        Registers a new topic the user's account with permissions to read, write, and describe the topic.
         """
         return self.web_client.register_topic(self.subject_openid, topic, "register")
 
     @requires_login
     def unregister_topic(self, topic):
         """
-        Unregisters a topic from the user's OpenID.
+        Unregisters a topic from a user's account, but all existing events within the topic are unaffected.
         """
         return self.web_client.register_topic(self.subject_openid, topic, "unregister")
 
     @requires_login
     def get_topic_configs(self, topic):
         """
-        Get topic configurations.
+        Retrieves the current configurations for a registered topic.
         """
         return self.web_client.get_topic_configs(self.subject_openid, topic)
 
     @requires_login
     def update_topic_configs(self, topic, configs):
         """
-        Set topic configurations.
+        Updates the configurations for a registered topic.
         """
         return self.web_client.update_topic_configs(self.subject_openid, topic, configs)
 
     @requires_login
     def update_topic_partitions(self, topic, new_partitions):
         """
-        Adjust topic number of partitions
+        Increases the number of partitions for a given topic to the specified new partition count.
         """
         return self.web_client.update_topic_partitions(self.subject_openid, topic, new_partitions)
 
     @requires_login
     def grant_user_access(self, topic, user):
         """
-        Registers a new topic under the user's OpenID.
+        Authorizes another user to access a registered topic under the invoker's account.
         """
         return self.web_client.grant_user_access(self.subject_openid, topic, user, "grant")
 
     @requires_login
     def revoke_user_access(self, topic, user):
         """
-        Unregisters a topic from the user's OpenID.
+        Removes access permissions for another user from a registered topic under the invoker's account.
         """
         return self.web_client.grant_user_access(self.subject_openid, topic, user, "revoke")
 
     @requires_login
     def list_triggers(self):
         """
-        Retrieves the list of functions associated with the user's OpenID.
+        Retrieves a list of triggers associated created under the user's account, showing each trigger's configurations and UUID.
         """
         return self.web_client.list_triggers(self.subject_openid)
 
     @requires_login
     def create_trigger(self, topic, function, function_configs, trigger_configs):
         """
-        Registers a new functions under the user's OpenID.
+        Creates a new trigger under the user's account with specific function and invocation configurations. 
         """
-        return self.web_client.create_trigger(self.subject_openid, topic, function, "create",
-                                              function_configs, trigger_configs)
+        return self.web_client.create_trigger(
+            self.subject_openid, topic, function, "create", function_configs, trigger_configs)
 
     @requires_login
     def delete_trigger(self, topic, function):
         """
-        Unregisters a functions from the user's OpenID.
+        Deletes a trigger and related AWS resources, while the associated topic remains unaffected.
         """
-        return self.web_client.create_trigger(self.subject_openid, topic, function, "delete",
-                                              {}, {})
+        return self.web_client.create_trigger(
+            self.subject_openid, topic, function, "delete", {}, {})
 
     @requires_login
     def update_trigger(self, trigger_uuid, trigger_configs):
         """
-        Update a functions's trigger'.
+        Updates invocation configurations of an existing trigger, identified by its unique trigger UUID.
         """
         return self.web_client.update_trigger(self.subject_openid, trigger_uuid, trigger_configs)

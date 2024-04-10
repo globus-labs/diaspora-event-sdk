@@ -33,7 +33,8 @@ class WebClient(globus_sdk.BaseClient):
         self, subject: UUID_LIKE_T, topic: str, action: str
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.put(
-            f"/api/v2/topic/{topic}", headers={"Subject": str(subject), "Action": action}
+            f"/api/v2/topic/{topic}",
+            headers={"Subject": str(subject), "Action": action}
         )
 
     def get_topic_configs(
@@ -41,8 +42,7 @@ class WebClient(globus_sdk.BaseClient):
     ) -> globus_sdk.GlobusHTTPResponse:
         return self.get(
             f"/api/v2/topic/{topic}",
-            headers={"Subject": str(subject), "Topic": topic},
-            # data=json.dumps(configs).encode("utf-8")
+            headers={"Subject": str(subject), "Topic": topic}
         )
 
     def update_topic_configs(
@@ -61,7 +61,7 @@ class WebClient(globus_sdk.BaseClient):
         return self.post(
             f"/api/v2/topic/{topic}/partitions",
             headers={"Subject": str(subject), "Topic": topic,
-                     "NewPartitions": str(new_partitions)},
+                     "NewPartitions": str(new_partitions)}
         )
 
     def grant_user_access(
