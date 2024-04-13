@@ -1,6 +1,8 @@
-from typing import Optional
 import json
+from typing import Optional
+
 import globus_sdk
+
 from diaspora_event_sdk.sdk.utils.uuid_like import UUID_LIKE_T
 
 from ._environments import TOKEN_EXCHANGE
@@ -97,4 +99,21 @@ class WebClient(globus_sdk.BaseClient):
             headers={"Subject": str(subject), "Trigger_id": str(trigger_uuid),
                      "Content-Type": "text/plain"},
             data=json.dumps(trigger_configs).encode("utf-8")
+        )
+
+    def list_log_streams(
+        self, subject: UUID_LIKE_T, trigger: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.get(
+            f"/api/v2/logs",
+            headers={"Subject": str(subject), "Trigger": trigger}
+        )
+
+    def get_log_events(
+        self, subject: UUID_LIKE_T, trigger: str, stream: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.get(
+            f"/api/v2/log",
+            headers={"Subject": str(subject), "Trigger": trigger,
+                     "Stream": stream}
         )

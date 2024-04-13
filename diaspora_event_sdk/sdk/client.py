@@ -196,3 +196,19 @@ class Client:
         Updates invocation configurations of an existing trigger, identified by its unique trigger UUID.
         """
         return self.web_client.update_trigger(self.subject_openid, trigger_uuid, trigger_configs)
+
+    @requires_login
+    def list_log_streams(self, trigger):
+        """
+        List log streams of a trigger under the user's account
+        """
+        return self.web_client.list_log_streams(
+            self.subject_openid, trigger)
+
+    @requires_login
+    def get_log_events(self, trigger, stream):
+        """
+        Get events in a particular log stream of a trigger under the user's account
+        """
+        return self.web_client.get_log_events(
+            self.subject_openid, trigger, stream)
