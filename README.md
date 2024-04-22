@@ -1,4 +1,4 @@
-# Diaspora: Resilience-enabling services for science from HPC to edge
+# Diaspora: Hybrid Event-Driven Architecture for Distributed Scientific Computing
 
 ## Event Fabric SDK Installation Guide
 ### Recommended Method: Use with `kafka-python`
