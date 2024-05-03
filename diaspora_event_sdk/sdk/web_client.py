@@ -66,6 +66,15 @@ class WebClient(globus_sdk.BaseClient):
                      "NewPartitions": str(new_partitions)}
         )
 
+    def reset_topic(
+        self, subject: UUID_LIKE_T, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.post(
+            f"/api/v2/topic/{topic}/reset",
+            headers={"Subject": str(subject),
+                     "Topic": topic}
+        )
+
     def grant_user_access(
         self, subject: UUID_LIKE_T, topic: str, user: UUID_LIKE_T, action: str
     ) -> globus_sdk.GlobusHTTPResponse:
@@ -73,6 +82,15 @@ class WebClient(globus_sdk.BaseClient):
             f"/api/v2/topic/{topic}/user",
             headers={"Subject": str(subject), "Action": action,
                      "Topic": topic, "User": str(user)}
+        )
+
+    def list_topic_users(
+        self, subject: UUID_LIKE_T, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        return self.get(
+            f"/api/v2/topic/{topic}/users",
+            headers={"Subject": str(subject),
+                     "Topic": topic}
         )
 
     def list_triggers(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:

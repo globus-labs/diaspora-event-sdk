@@ -154,6 +154,13 @@ class Client:
         return self.web_client.update_topic_partitions(self.subject_openid, topic, new_partitions)
 
     @requires_login
+    def reset_topic(self, topic):
+        """
+        Deletes and recreates the topic, removing all messages and restoring the topic to the default configurations while user access is not affected.
+        """
+        return self.web_client.reset_topic(self.subject_openid, topic)
+
+    @requires_login
     def grant_user_access(self, topic, user):
         """
         Authorizes another user to access a registered topic under the invoker's account.
@@ -166,6 +173,13 @@ class Client:
         Removes access permissions for another user from a registered topic under the invoker's account.
         """
         return self.web_client.grant_user_access(self.subject_openid, topic, user, "revoke")
+
+    @requires_login
+    def list_topic_users(self, topic):
+        """
+        Returns a list of users that have access to the topic.
+        """
+        return self.web_client.list_topic_users(self.subject_openid, topic)
 
     @requires_login
     def list_triggers(self):
