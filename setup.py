@@ -33,13 +33,13 @@ setup(
     long_description_content_type="text/markdown",
     packages=find_packages(),
     include_package_data=True,
-    license="LICENSE",
+    license="Apache 2.0",
     url="https://github.com/globus-labs/diaspora-event-sdk",
     install_requires=[
         "globus-sdk>=3.20.1,<4",
     ],
     extras_require={
-        "kafka-python": ["kafka-python", "aws-msk-iam-sasl-signer-python"],
+        "kafka-python": ["kafka-python"],
         "test": TEST_REQUIRES,
     },
 )
