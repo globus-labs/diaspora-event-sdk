@@ -15,23 +15,17 @@
 import logging
 from collections.abc import Mapping
 
-# import urllib3.util
-# from urllib3.connection import HTTPConnection, VerifiedHTTPSConnection
-# from urllib3.connectionpool import HTTPConnectionPool, HTTPSConnectionPool
-
-# import botocore.utils
 from .compat import (
     HTTPHeaders,
-    # HTTPResponse,
     MutableMapping,
     urlencode,
     urlparse,
-    # urlsplit,
-    # urlunsplit,
 )
 from .exceptions import UnseekableStreamError
+from .utils import determine_content_length
 
 logger = logging.getLogger(__name__)
+
 
 class AWSRequestPreparer:
     """

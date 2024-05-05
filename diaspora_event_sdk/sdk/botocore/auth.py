@@ -11,27 +11,21 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-import base64
 import calendar
 import datetime
 import functools
 import hmac
 import json
 import logging
-import time
 from collections.abc import Mapping
 from email.utils import formatdate
 from hashlib import sha1, sha256
-from operator import itemgetter
 
 from .compat import (
-    # HAS_CRT,
     HTTPHeaders,
-    # encodebytes,
     ensure_unicode,
     parse_qs,
     quote,
-    # unquote,
     urlsplit,
     urlunsplit,
 )
@@ -41,9 +35,6 @@ from .utils import (
     normalize_url_path,
     percent_encode_sequence,
 )
-
-# Imports for backwards compatibility
-from botocore.compat import MD5_AVAILABLE  # noqa
 
 
 logger = logging.getLogger(__name__)

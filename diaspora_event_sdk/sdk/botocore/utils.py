@@ -10,83 +10,16 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
-# import base64
-# import binascii
-# import datetime
-# import email.message
-# import functools
-# import hashlib
 import io
 import logging
-# import os
-# import random
 import re
-# import socket
-# import time
-# import warnings
-# import weakref
-# from datetime import datetime as _DatetimeClass
-# from ipaddress import ip_address
-# from pathlib import Path
-# from urllib.request import getproxies, proxy_bypass
 
-# import dateutil.parser
-# from dateutil.tz import tzutc
-# from urllib3.exceptions import LocationParseError
-
-# import botocore
-# import botocore.awsrequest
-# import botocore.httpsession
-
-# IP Regexes retained for backwards compatibility
-# from botocore.compat import HEX_PAT  # noqa: F401
-# from botocore.compat import IPV4_PAT  # noqa: F401
-# from botocore.compat import IPV6_ADDRZ_PAT  # noqa: F401
-# from botocore.compat import IPV6_PAT  # noqa: F401
-# from botocore.compat import LS32_PAT  # noqa: F401
-# from botocore.compat import UNRESERVED_PAT  # noqa: F401
-# from botocore.compat import ZONE_ID_PAT  # noqa: F401
 from .compat import (
-    # HAS_CRT,
-    # IPV4_RE,
     IPV6_ADDRZ_RE,
-    # MD5_AVAILABLE,
     UNSAFE_URL_CHARS,
-    # OrderedDict,
-    # get_md5,
-    # get_tzinfo_options,
-    # json,
     quote,
     urlparse,
-    # urlsplit,
-    # urlunsplit,
-    # zip_longest,
 )
-# from botocore.exceptions import (
-#     ClientError,
-#     ConfigNotFound,
-#     ConnectionClosedError,
-#     ConnectTimeoutError,
-#     EndpointConnectionError,
-#     HTTPClientError,
-#     InvalidDNSNameError,
-#     InvalidEndpointConfigurationError,
-#     InvalidExpressionError,
-#     InvalidHostLabelError,
-#     InvalidIMDSEndpointError,
-#     InvalidIMDSEndpointModeError,
-#     InvalidRegionError,
-#     MetadataRetrievalError,
-#     MissingDependencyException,
-#     ReadTimeoutError,
-#     SSOTokenLoadError,
-#     UnsupportedOutpostResourceError,
-#     UnsupportedS3AccesspointConfigurationError,
-#     UnsupportedS3ArnError,
-#     UnsupportedS3ConfigurationError,
-#     UnsupportedS3ControlArnError,
-#     UnsupportedS3ControlConfigurationError,
-# )
 
 logger = logging.getLogger(__name__)
 DEFAULT_METADATA_SERVICE_TIMEOUT = 1
@@ -105,85 +38,6 @@ LABEL_RE = re.compile(r'[a-z0-9][a-z0-9\-]*[a-z0-9]')
 #     ConnectTimeoutError,
 # )
 S3_ACCELERATE_WHITELIST = ['dualstack']
-# In switching events from using service name / endpoint prefix to service
-# id, we have to preserve compatibility. This maps the instances where either
-# is different than the transformed service id.
-EVENT_ALIASES = {
-    "a4b": "alexa-for-business",
-    "alexaforbusiness": "alexa-for-business",
-    "api.mediatailor": "mediatailor",
-    "api.pricing": "pricing",
-    "api.sagemaker": "sagemaker",
-    "apigateway": "api-gateway",
-    "application-autoscaling": "application-auto-scaling",
-    "appstream2": "appstream",
-    "autoscaling": "auto-scaling",
-    "autoscaling-plans": "auto-scaling-plans",
-    "ce": "cost-explorer",
-    "cloudhsmv2": "cloudhsm-v2",
-    "cloudsearchdomain": "cloudsearch-domain",
-    "cognito-idp": "cognito-identity-provider",
-    "config": "config-service",
-    "cur": "cost-and-usage-report-service",
-    "data.iot": "iot-data-plane",
-    "data.jobs.iot": "iot-jobs-data-plane",
-    "data.mediastore": "mediastore-data",
-    "datapipeline": "data-pipeline",
-    "devicefarm": "device-farm",
-    "devices.iot1click": "iot-1click-devices-service",
-    "directconnect": "direct-connect",
-    "discovery": "application-discovery-service",
-    "dms": "database-migration-service",
-    "ds": "directory-service",
-    "dynamodbstreams": "dynamodb-streams",
-    "elasticbeanstalk": "elastic-beanstalk",
-    "elasticfilesystem": "efs",
-    "elasticloadbalancing": "elastic-load-balancing",
-    "elasticmapreduce": "emr",
-    "elastictranscoder": "elastic-transcoder",
-    "elb": "elastic-load-balancing",
-    "elbv2": "elastic-load-balancing-v2",
-    "email": "ses",
-    "entitlement.marketplace": "marketplace-entitlement-service",
-    "es": "elasticsearch-service",
-    "events": "eventbridge",
-    "cloudwatch-events": "eventbridge",
-    "iot-data": "iot-data-plane",
-    "iot-jobs-data": "iot-jobs-data-plane",
-    "iot1click-devices": "iot-1click-devices-service",
-    "iot1click-projects": "iot-1click-projects",
-    "kinesisanalytics": "kinesis-analytics",
-    "kinesisvideo": "kinesis-video",
-    "lex-models": "lex-model-building-service",
-    "lex-runtime": "lex-runtime-service",
-    "logs": "cloudwatch-logs",
-    "machinelearning": "machine-learning",
-    "marketplace-entitlement": "marketplace-entitlement-service",
-    "marketplacecommerceanalytics": "marketplace-commerce-analytics",
-    "metering.marketplace": "marketplace-metering",
-    "meteringmarketplace": "marketplace-metering",
-    "mgh": "migration-hub",
-    "models.lex": "lex-model-building-service",
-    "monitoring": "cloudwatch",
-    "mturk-requester": "mturk",
-    "opsworks-cm": "opsworkscm",
-    "projects.iot1click": "iot-1click-projects",
-    "resourcegroupstaggingapi": "resource-groups-tagging-api",
-    "route53": "route-53",
-    "route53domains": "route-53-domains",
-    "runtime.lex": "lex-runtime-service",
-    "runtime.sagemaker": "sagemaker-runtime",
-    "sdb": "simpledb",
-    "secretsmanager": "secrets-manager",
-    "serverlessrepo": "serverlessapplicationrepository",
-    "servicecatalog": "service-catalog",
-    "states": "sfn",
-    "stepfunctions": "sfn",
-    "storagegateway": "storage-gateway",
-    "streams.dynamodb": "dynamodb-streams",
-    "tagging": "resource-groups-tagging-api",
-}
-
 
 # This pattern can be used to detect if a header is a flexible checksum header
 CHECKSUM_HEADER_PATTERN = re.compile(
@@ -297,6 +151,7 @@ def percent_encode_sequence(mapping, safe=SAFE_CHARS):
                 f'{percent_encode(key)}={percent_encode(value)}'
             )
     return '&'.join(encoded_pairs)
+
 
 def percent_encode(input_str, safe=SAFE_CHARS):
     """Urlencodes a string.

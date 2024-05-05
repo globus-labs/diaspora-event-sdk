@@ -12,9 +12,6 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
-# from botocore.vendored import requests
-# from botocore.vendored.requests.packages import urllib3
-
 def _exception_from_packed_args(exception_cls, args=None, kwargs=None):
     # This is helpful for reducing Exceptions that only accept kwargs as
     # only positional arguments can be provided for __reduce__
