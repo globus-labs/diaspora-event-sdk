@@ -4,20 +4,20 @@ import warnings
 import time
 
 from .client import Client
+from .aws_iam_msk import generate_auth_token
 
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
 kafka_available = True
 try:
     from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
     from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
-    from aws_msk_iam_sasl_signer import MSKAuthTokenProvider  # type: ignore[import,import-not-found]
     import os
 
     class MSKTokenProvider:
         def token(self):
-            token, _ = MSKAuthTokenProvider.generate_auth_token("us-east-1")
+            token, _ = generate_auth_token("us-east-1")
             return token
-except ImportError:
+except Exception as e:
     kafka_available = False
 
 
