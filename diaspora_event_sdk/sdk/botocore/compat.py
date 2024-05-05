@@ -96,7 +96,7 @@ try:
     import xml.etree.cElementTree as ETree
 except ImportError:
     # cElementTree does not exist from Python3.9+
-    import xml.etree.ElementTree as ETree
+    import xml.etree.ElementTree as ETree  # type: ignore
 XMLParseError = ETree.ParseError
 
 
@@ -110,7 +110,7 @@ XMLParseError = ETree.ParseError
 #     )
 
 
-@classmethod
+@classmethod  # type: ignore
 def from_dict(cls, d):
     new_instance = cls()
     for key, value in d.items():
@@ -118,7 +118,7 @@ def from_dict(cls, d):
     return new_instance
 
 
-@classmethod
+@classmethod  # type: ignore
 def from_pairs(cls, pairs):
     new_instance = cls()
     for key, value in pairs:
@@ -126,8 +126,8 @@ def from_pairs(cls, pairs):
     return new_instance
 
 
-HTTPHeaders.from_dict = from_dict
-HTTPHeaders.from_pairs = from_pairs
+HTTPHeaders.from_dict = from_dict  # type: ignore
+HTTPHeaders.from_pairs = from_pairs  # type: ignore
 
 
 def copy_kwargs(kwargs):
@@ -292,7 +292,7 @@ def _windows_shell_split(s):
 
 # Detect if CRT is available for use
 try:
-    import awscrt.auth
+    import awscrt.auth  # type: ignore[import]
 
     # Allow user opt-out if needed
     disabled = os.environ.get('BOTO_DISABLE_CRT', "false")
