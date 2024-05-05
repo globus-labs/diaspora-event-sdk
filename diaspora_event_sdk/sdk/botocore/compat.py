@@ -44,8 +44,8 @@ from collections import OrderedDict
 from collections.abc import MutableMapping
 from math import floor
 
-from dateutil.tz import tzlocal
-from urllib3 import exceptions
+# from dateutil.tz import tzlocal
+# from urllib3 import exceptions
 
 from .exceptions import MD5UnavailableError
 
@@ -100,14 +100,14 @@ except ImportError:
 XMLParseError = ETree.ParseError
 
 
-def filter_ssl_warnings():
-    # Ignore warnings related to SNI as it is not being used in validations.
-    warnings.filterwarnings(
-        'ignore',
-        message="A true SSLContext object is not available.*",
-        category=exceptions.InsecurePlatformWarning,
-        module=r".*urllib3\.util\.ssl_",
-    )
+# def filter_ssl_warnings():
+#     # Ignore warnings related to SNI as it is not being used in validations.
+#     warnings.filterwarnings(
+#         'ignore',
+#         message="A true SSLContext object is not available.*",
+#         category=exceptions.InsecurePlatformWarning,
+#         module=r".*urllib3\.util\.ssl_",
+#     )
 
 
 @classmethod
@@ -278,16 +278,16 @@ def _windows_shell_split(s):
     return components
 
 
-def get_tzinfo_options():
-    # Due to dateutil/dateutil#197, Windows may fail to parse times in the past
-    # with the system clock. We can alternatively fallback to tzwininfo when
-    # this happens, which will get time info from the Windows registry.
-    if sys.platform == 'win32':
-        from dateutil.tz import tzwinlocal
+# def get_tzinfo_options():
+#     # Due to dateutil/dateutil#197, Windows may fail to parse times in the past
+#     # with the system clock. We can alternatively fallback to tzwininfo when
+#     # this happens, which will get time info from the Windows registry.
+#     if sys.platform == 'win32':
+#         from dateutil.tz import tzwinlocal
 
-        return (tzlocal, tzwinlocal)
-    else:
-        return (tzlocal,)
+#         return (tzlocal, tzwinlocal)
+#     else:
+#         return (tzlocal,)
 
 
 # Detect if CRT is available for use
