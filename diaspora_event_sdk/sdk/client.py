@@ -7,7 +7,7 @@ from diaspora_event_sdk.sdk.login_manager import (
     requires_login,
 )
 
-from ._environments import DIASPORA_RESOURCE_SERVER, TOKEN_EXCHANGE
+from ._environments import DIASPORA_RESOURCE_SERVER, get_web_service_url
 
 
 class Client:
@@ -16,6 +16,8 @@ class Client:
         environment: Optional[str] = None,
         login_manager: Optional[LoginManagerProtocol] = None,
     ):
+        self.web_service_address = get_web_service_url(environment)
+
         # if a login manager was passed, no login flow is triggered
         if login_manager is not None:
             self.login_manager: LoginManagerProtocol = login_manager
@@ -26,7 +28,7 @@ class Client:
             self.login_manager.ensure_logged_in()
 
         self.web_client = self.login_manager.get_web_client(
-            base_url=TOKEN_EXCHANGE)
+            base_url=self.web_service_address)
         self.auth_client = self.login_manager.get_auth_client()
         self.subject_openid = self.auth_client.oauth2_userinfo()["sub"]
 
