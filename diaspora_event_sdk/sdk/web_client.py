@@ -5,7 +5,7 @@ import globus_sdk
 
 from diaspora_event_sdk.sdk.utils.uuid_like import UUID_LIKE_T
 
-from ._environments import TOKEN_EXCHANGE
+from ._environments import get_web_service_url
 
 
 class WebClient(globus_sdk.BaseClient):
@@ -18,7 +18,7 @@ class WebClient(globus_sdk.BaseClient):
         **kwargs,
     ):
         if base_url is None:
-            base_url = TOKEN_EXCHANGE
+            base_url = get_web_service_url(environment)
 
         super().__init__(environment=environment, base_url=base_url, **kwargs)
 

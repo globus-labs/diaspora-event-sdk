@@ -3,8 +3,6 @@ import logging
 
 import globus_sdk
 
-from .._environments import TOKEN_EXCHANGE
-
 log = logging.getLogger(__name__)
 
 
@@ -27,7 +25,7 @@ def requires_login(func):
                 self.login_manager.run_login_flow()
                 # Initiate a new web client with updated authorizer
                 self.web_client = self.login_manager.get_web_client(
-                    base_url=TOKEN_EXCHANGE
+                    base_url=self.web_service_address
                 )
                 return func(self, *args, **kwargs)
 
