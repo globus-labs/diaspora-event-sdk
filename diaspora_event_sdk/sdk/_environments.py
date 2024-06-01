@@ -11,9 +11,9 @@ def _get_envname():
 def get_web_service_url(envname: str | None = None) -> str:
     env = envname or _get_envname()
     urls = {
-        "production": "http://3.220.110.101/",
-        "dev": "https://diaspora-web-service.ml22sevubfnks.us-east-1.cs.amazonlightsail.com",
-        "local": "http://localhost:5000",
+        "production": "https://diaspora-web-service.ml22sevubfnks.us-east-1.cs.amazonlightsail.com",
+        "dev": "https://diaspora-web-service-dev.ml22sevubfnks.us-east-1.cs.amazonlightsail.com",
+        "local": "http://localhost:8000",
     }
 
     return urls.get(env, urls["production"])
