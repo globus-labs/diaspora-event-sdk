@@ -4,6 +4,8 @@ on:
   push:
     branches: [main, test-me-*]
     tags: '**'
+  schedule:
+    - cron: '0 0 * * *'  # Runs at midnight every day
   pull_request:
   workflow_dispatch:
 
