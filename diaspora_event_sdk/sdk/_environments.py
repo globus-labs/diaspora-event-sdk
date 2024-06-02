@@ -15,6 +15,7 @@ def get_web_service_url(envname: Union[str, None] = None) -> str:
         "production": "https://diaspora-web-service.ml22sevubfnks.us-east-1.cs.amazonlightsail.com",
         "dev": "https://diaspora-web-service-dev.ml22sevubfnks.us-east-1.cs.amazonlightsail.com",
         "local": "http://localhost:8000",
+        "legacy":  "http://3.220.110.101/",
     }
 
     return urls.get(env, urls["production"])
