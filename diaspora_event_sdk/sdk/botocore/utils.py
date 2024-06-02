@@ -23,25 +23,25 @@ from .compat import (
 
 logger = logging.getLogger(__name__)
 DEFAULT_METADATA_SERVICE_TIMEOUT = 1
-METADATA_BASE_URL = 'http://169.254.169.254/'
-METADATA_BASE_URL_IPv6 = 'http://[fd00:ec2::254]/'
-METADATA_ENDPOINT_MODES = ('ipv4', 'ipv6')
+METADATA_BASE_URL = "http://169.254.169.254/"
+METADATA_BASE_URL_IPv6 = "http://[fd00:ec2::254]/"
+METADATA_ENDPOINT_MODES = ("ipv4", "ipv6")
 
 # These are chars that do not need to be urlencoded.
 # Based on rfc2986, section 2.3
-SAFE_CHARS = '-._~'
-LABEL_RE = re.compile(r'[a-z0-9][a-z0-9\-]*[a-z0-9]')
+SAFE_CHARS = "-._~"
+LABEL_RE = re.compile(r"[a-z0-9][a-z0-9\-]*[a-z0-9]")
 # RETRYABLE_HTTP_ERRORS = (
 #     ReadTimeoutError,
 #     EndpointConnectionError,
 #     ConnectionClosedError,
 #     ConnectTimeoutError,
 # )
-S3_ACCELERATE_WHITELIST = ['dualstack']
+S3_ACCELERATE_WHITELIST = ["dualstack"]
 
 # This pattern can be used to detect if a header is a flexible checksum header
 CHECKSUM_HEADER_PATTERN = re.compile(
-    r'^X-Amz-Checksum-([a-z0-9]*)$',
+    r"^X-Amz-Checksum-([a-z0-9]*)$",
     flags=re.IGNORECASE,
 )
 
@@ -58,7 +58,7 @@ def determine_content_length(body):
         pass
 
     # Try getting the length from a seekable stream
-    if hasattr(body, 'seek') and hasattr(body, 'tell'):
+    if hasattr(body, "seek") and hasattr(body, "tell"):
         try:
             orig_pos = body.tell()
             body.seek(0, 2)
@@ -78,13 +78,13 @@ def determine_content_length(body):
 def is_valid_ipv6_endpoint_url(endpoint_url):
     if UNSAFE_URL_CHARS.intersection(endpoint_url):
         return False
-    hostname = f'[{urlparse(endpoint_url).hostname}]'
+    hostname = f"[{urlparse(endpoint_url).hostname}]"
     return IPV6_ADDRZ_RE.match(hostname) is not None
 
 
 def normalize_url_path(path):
     if not path:
-        return '/'
+        return "/"
     return remove_dot_segments(path)
 
 
@@ -93,26 +93,26 @@ def remove_dot_segments(url):
     # Also, AWS services require consecutive slashes to be removed,
     # so that's done here as well
     if not url:
-        return ''
-    input_url = url.split('/')
+        return ""
+    input_url = url.split("/")
     output_list = []
     for x in input_url:
-        if x and x != '.':
-            if x == '..':
+        if x and x != ".":
+            if x == "..":
                 if output_list:
                     output_list.pop()
             else:
                 output_list.append(x)
 
-    if url[0] == '/':
-        first = '/'
+    if url[0] == "/":
+        first = "/"
     else:
-        first = ''
-    if url[-1] == '/' and output_list:
-        last = '/'
+        first = ""
+    if url[-1] == "/" and output_list:
+        last = "/"
     else:
-        last = ''
-    return first + '/'.join(output_list) + last
+        last = ""
+    return first + "/".join(output_list) + last
 
 
 def percent_encode_sequence(mapping, safe=SAFE_CHARS):
@@ -125,7 +125,7 @@ def percent_encode_sequence(mapping, safe=SAFE_CHARS):
       to be encoded, which matches what AWS services expect.
 
     If any value in the input ``mapping`` is a list type,
-    then each list element wil be serialized.  This is the equivalent
+    then each list element will be serialized.  This is the equivalent
     to ``urlencode``'s ``doseq=True`` argument.
 
     This function should be preferred over the stdlib
@@ -136,21 +136,17 @@ def percent_encode_sequence(mapping, safe=SAFE_CHARS):
 
     """
     encoded_pairs = []
-    if hasattr(mapping, 'items'):
+    if hasattr(mapping, "items"):
         pairs = mapping.items()
     else:
         pairs = mapping
     for key, value in pairs:
         if isinstance(value, list):
             for element in value:
-                encoded_pairs.append(
-                    f'{percent_encode(key)}={percent_encode(element)}'
-                )
+                encoded_pairs.append(f"{percent_encode(key)}={percent_encode(element)}")
         else:
-            encoded_pairs.append(
-                f'{percent_encode(key)}={percent_encode(value)}'
-            )
-    return '&'.join(encoded_pairs)
+            encoded_pairs.append(f"{percent_encode(key)}={percent_encode(value)}")
+    return "&".join(encoded_pairs)
 
 
 def percent_encode(input_str, safe=SAFE_CHARS):
@@ -170,5 +166,5 @@ def percent_encode(input_str, safe=SAFE_CHARS):
         input_str = str(input_str)
     # If it's not bytes, make it bytes by UTF-8 encoding it.
     if not isinstance(input_str, bytes):
-        input_str = input_str.encode('utf-8')
+        input_str = input_str.encode("utf-8")
     return quote(input_str, safe=safe)

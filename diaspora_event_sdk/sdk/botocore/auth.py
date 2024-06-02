@@ -19,7 +19,7 @@ import json
 import logging
 from collections.abc import Mapping
 from email.utils import formatdate
-from hashlib import sha1, sha256
+from hashlib import sha256
 
 from .compat import (
     HTTPHeaders,
@@ -40,22 +40,20 @@ from .utils import (
 logger = logging.getLogger(__name__)
 
 
-EMPTY_SHA256_HASH = (
-    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
-)
+EMPTY_SHA256_HASH = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 # This is the buffer size used when calculating sha256 checksums.
 # Experimenting with various buffer sizes showed that this value generally
 # gave the best result (in terms of performance).
 PAYLOAD_BUFFER = 1024 * 1024
-ISO8601 = '%Y-%m-%dT%H:%M:%SZ'
-SIGV4_TIMESTAMP = '%Y%m%dT%H%M%SZ'
+ISO8601 = "%Y-%m-%dT%H:%M:%SZ"
+SIGV4_TIMESTAMP = "%Y%m%dT%H%M%SZ"
 SIGNED_HEADERS_BLACKLIST = [
-    'expect',
-    'user-agent',
-    'x-amzn-trace-id',
+    "expect",
+    "user-agent",
+    "x-amzn-trace-id",
 ]
-UNSIGNED_PAYLOAD = 'UNSIGNED-PAYLOAD'
-STREAMING_UNSIGNED_PAYLOAD_TRAILER = 'STREAMING-UNSIGNED-PAYLOAD-TRAILER'
+UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD"
+STREAMING_UNSIGNED_PAYLOAD_TRAILER = "STREAMING-UNSIGNED-PAYLOAD-TRAILER"
 
 
 def _host_from_url(url):
@@ -66,14 +64,14 @@ def _host_from_url(url):
     url_parts = urlsplit(url)
     host = url_parts.hostname  # urlsplit's hostname is always lowercase
     if is_valid_ipv6_endpoint_url(url):
-        host = f'[{host}]'
+        host = f"[{host}]"
     default_ports = {
-        'http': 80,
-        'https': 443,
+        "http": 80,
+        "https": 443,
     }
     if url_parts.port is not None:
         if url_parts.port != default_ports.get(url_parts.scheme):
-            host = '%s:%d' % (host, url_parts.port)
+            host = "%s:%d" % (host, url_parts.port)
     return host
 
 
@@ -84,7 +82,7 @@ def _get_body_as_dict(request):
     # dict.
     data = request.data
     if isinstance(data, bytes):
-        data = json.loads(data.decode('utf-8'))
+        data = json.loads(data.decode("utf-8"))
     elif isinstance(data, str):
         data = json.loads(data)
     return data
@@ -108,16 +106,16 @@ class SigV4Auth(BaseSigner):
     def __init__(self, credentials, service_name, region_name):
         self.credentials = credentials
         # We initialize these value here so the unit tests can have
-        # valid values.  But these will get overriden in ``add_auth``
+        # valid values.  But these will get overridden in ``add_auth``
         # later for real requests.
         self._region_name = region_name
         self._service_name = service_name
 
     def _sign(self, key, msg, hex=False):
         if hex:
-            sig = hmac.new(key, msg.encode('utf-8'), sha256).hexdigest()
+            sig = hmac.new(key, msg.encode("utf-8"), sha256).hexdigest()
         else:
-            sig = hmac.new(key, msg.encode('utf-8'), sha256).digest()
+            sig = hmac.new(key, msg.encode("utf-8"), sha256).digest()
         return sig
 
     def headers_to_sign(self, request):
@@ -130,10 +128,10 @@ class SigV4Auth(BaseSigner):
             lname = name.lower()
             if lname not in SIGNED_HEADERS_BLACKLIST:
                 header_map[lname] = value
-        if 'host' not in header_map:
+        if "host" not in header_map:
             # TODO: We should set the host ourselves, instead of relying on our
             # HTTP client to set it for us.
-            header_map['host'] = _host_from_url(request.url)
+            header_map["host"] = _host_from_url(request.url)
         return header_map
 
     def canonical_query_string(self, request):
@@ -153,30 +151,30 @@ class SigV4Auth(BaseSigner):
             params = params.items()
         for key, value in params:
             key_val_pairs.append(
-                (quote(key, safe='-_.~'), quote(str(value), safe='-_.~'))
+                (quote(key, safe="-_.~"), quote(str(value), safe="-_.~"))
             )
         sorted_key_vals = []
         # Sort by the URI-encoded key names, and in the case of
         # repeated keys, then sort by the value.
         for key, value in sorted(key_val_pairs):
-            sorted_key_vals.append(f'{key}={value}')
-        canonical_query_string = '&'.join(sorted_key_vals)
+            sorted_key_vals.append(f"{key}={value}")
+        canonical_query_string = "&".join(sorted_key_vals)
         return canonical_query_string
 
     def _canonical_query_string_url(self, parts):
-        canonical_query_string = ''
+        canonical_query_string = ""
         if parts.query:
             # [(key, value), (key2, value2)]
             key_val_pairs = []
-            for pair in parts.query.split('&'):
-                key, _, value = pair.partition('=')
+            for pair in parts.query.split("&"):
+                key, _, value = pair.partition("=")
                 key_val_pairs.append((key, value))
             sorted_key_vals = []
             # Sort by the URI-encoded key names, and in the case of
             # repeated keys, then sort by the value.
             for key, value in sorted(key_val_pairs):
-                sorted_key_vals.append(f'{key}={value}')
-            canonical_query_string = '&'.join(sorted_key_vals)
+                sorted_key_vals.append(f"{key}={value}")
+            canonical_query_string = "&".join(sorted_key_vals)
         return canonical_query_string
 
     def canonical_headers(self, headers_to_sign):
@@ -189,11 +187,11 @@ class SigV4Auth(BaseSigner):
         headers = []
         sorted_header_names = sorted(set(headers_to_sign))
         for key in sorted_header_names:
-            value = ','.join(
+            value = ",".join(
                 self._header_value(v) for v in headers_to_sign.get_all(key)
             )
-            headers.append(f'{key}:{ensure_unicode(value)}')
-        return '\n'.join(headers)
+            headers.append(f"{key}:{ensure_unicode(value)}")
+        return "\n".join(headers)
 
     def _header_value(self, value):
         # From the sigv4 docs:
@@ -201,16 +199,16 @@ class SigV4Auth(BaseSigner):
         #
         # The Trimall function removes excess white space before and after
         # values, and converts sequential spaces to a single space.
-        return ' '.join(value.split())
+        return " ".join(value.split())
 
     def signed_headers(self, headers_to_sign):
         headers = sorted(n.lower().strip() for n in set(headers_to_sign))
-        return ';'.join(headers)
+        return ";".join(headers)
 
     def _is_streaming_checksum_payload(self, request):
-        checksum_context = request.context.get('checksum', {})
-        algorithm = checksum_context.get('request_algorithm')
-        return isinstance(algorithm, dict) and algorithm.get('in') == 'trailer'
+        checksum_context = request.context.get("checksum", {})
+        algorithm = checksum_context.get("request_algorithm")
+        return isinstance(algorithm, dict) and algorithm.get("in") == "trailer"
 
     def payload(self, request):
         if self._is_streaming_checksum_payload(request):
@@ -220,13 +218,11 @@ class SigV4Auth(BaseSigner):
             # place of the payload checksum.
             return UNSIGNED_PAYLOAD
         request_body = request.body
-        if request_body and hasattr(request_body, 'seek'):
+        if request_body and hasattr(request_body, "seek"):
             position = request_body.tell()
-            read_chunksize = functools.partial(
-                request_body.read, PAYLOAD_BUFFER
-            )
+            read_chunksize = functools.partial(request_body.read, PAYLOAD_BUFFER)
             checksum = sha256()
-            for chunk in iter(read_chunksize, b''):
+            for chunk in iter(read_chunksize, b""):
                 checksum.update(chunk)
             hex_checksum = checksum.hexdigest()
             request_body.seek(position)
@@ -240,13 +236,13 @@ class SigV4Auth(BaseSigner):
 
     def _should_sha256_sign_payload(self, request):
         # Payloads will always be signed over insecure connections.
-        if not request.url.startswith('https'):
+        if not request.url.startswith("https"):
             return True
 
         # Certain operations may have payload signing disabled by default.
         # Since we don't have access to the operation model, we pass in this
         # bit of metadata through the request context.
-        return request.context.get('payload_signing_enabled', True)
+        return request.context.get("payload_signing_enabled", True)
 
     def canonical_request(self, request):
         cr = [request.method.upper()]
@@ -254,34 +250,34 @@ class SigV4Auth(BaseSigner):
         cr.append(path)
         cr.append(self.canonical_query_string(request))
         headers_to_sign = self.headers_to_sign(request)
-        cr.append(self.canonical_headers(headers_to_sign) + '\n')
+        cr.append(self.canonical_headers(headers_to_sign) + "\n")
         cr.append(self.signed_headers(headers_to_sign))
-        if 'X-Amz-Content-SHA256' in request.headers:
-            body_checksum = request.headers['X-Amz-Content-SHA256']
+        if "X-Amz-Content-SHA256" in request.headers:
+            body_checksum = request.headers["X-Amz-Content-SHA256"]
         else:
             body_checksum = self.payload(request)
         cr.append(body_checksum)
-        return '\n'.join(cr)
+        return "\n".join(cr)
 
     def _normalize_url_path(self, path):
-        normalized_path = quote(normalize_url_path(path), safe='/~')
+        normalized_path = quote(normalize_url_path(path), safe="/~")
         return normalized_path
 
     def scope(self, request):
         scope = [self.credentials.access_key]
-        scope.append(request.context['timestamp'][0:8])
+        scope.append(request.context["timestamp"][0:8])
         scope.append(self._region_name)
         scope.append(self._service_name)
-        scope.append('aws4_request')
-        return '/'.join(scope)
+        scope.append("aws4_request")
+        return "/".join(scope)
 
     def credential_scope(self, request):
         scope = []
-        scope.append(request.context['timestamp'][0:8])
+        scope.append(request.context["timestamp"][0:8])
         scope.append(self._region_name)
         scope.append(self._service_name)
-        scope.append('aws4_request')
-        return '/'.join(scope)
+        scope.append("aws4_request")
+        return "/".join(scope)
 
     def string_to_sign(self, request, canonical_request):
         """
@@ -289,102 +285,94 @@ class SigV4Auth(BaseSigner):
         containing the original version of all headers that
         were included in the StringToSign.
         """
-        sts = ['AWS4-HMAC-SHA256']
-        sts.append(request.context['timestamp'])
+        sts = ["AWS4-HMAC-SHA256"]
+        sts.append(request.context["timestamp"])
         sts.append(self.credential_scope(request))
-        sts.append(sha256(canonical_request.encode('utf-8')).hexdigest())
-        return '\n'.join(sts)
+        sts.append(sha256(canonical_request.encode("utf-8")).hexdigest())
+        return "\n".join(sts)
 
     def signature(self, string_to_sign, request):
         key = self.credentials.secret_key
-        k_date = self._sign(
-            (f"AWS4{key}").encode(), request.context["timestamp"][0:8]
-        )
+        k_date = self._sign((f"AWS4{key}").encode(), request.context["timestamp"][0:8])
         k_region = self._sign(k_date, self._region_name)
         k_service = self._sign(k_region, self._service_name)
-        k_signing = self._sign(k_service, 'aws4_request')
+        k_signing = self._sign(k_service, "aws4_request")
         return self._sign(k_signing, string_to_sign, hex=True)
 
     def add_auth(self, request):
         if self.credentials is None:
             raise NoCredentialsError()
         datetime_now = datetime.datetime.utcnow()
-        request.context['timestamp'] = datetime_now.strftime(SIGV4_TIMESTAMP)
+        request.context["timestamp"] = datetime_now.strftime(SIGV4_TIMESTAMP)
         # This could be a retry.  Make sure the previous
         # authorization header is removed first.
         self._modify_request_before_signing(request)
         canonical_request = self.canonical_request(request)
         logger.debug("Calculating signature using v4 auth.")
-        logger.debug('CanonicalRequest:\n%s', canonical_request)
+        logger.debug("CanonicalRequest:\n%s", canonical_request)
         string_to_sign = self.string_to_sign(request, canonical_request)
-        logger.debug('StringToSign:\n%s', string_to_sign)
+        logger.debug("StringToSign:\n%s", string_to_sign)
         signature = self.signature(string_to_sign, request)
-        logger.debug('Signature:\n%s', signature)
+        logger.debug("Signature:\n%s", signature)
 
         self._inject_signature_to_request(request, signature)
 
     def _inject_signature_to_request(self, request, signature):
-        auth_str = ['AWS4-HMAC-SHA256 Credential=%s' % self.scope(request)]
+        auth_str = ["AWS4-HMAC-SHA256 Credential=%s" % self.scope(request)]
         headers_to_sign = self.headers_to_sign(request)
-        auth_str.append(
-            f"SignedHeaders={self.signed_headers(headers_to_sign)}"
-        )
-        auth_str.append('Signature=%s' % signature)
-        request.headers['Authorization'] = ', '.join(auth_str)
+        auth_str.append(f"SignedHeaders={self.signed_headers(headers_to_sign)}")
+        auth_str.append("Signature=%s" % signature)
+        request.headers["Authorization"] = ", ".join(auth_str)
         return request
 
     def _modify_request_before_signing(self, request):
-        if 'Authorization' in request.headers:
-            del request.headers['Authorization']
+        if "Authorization" in request.headers:
+            del request.headers["Authorization"]
         self._set_necessary_date_headers(request)
         if self.credentials.token:
-            if 'X-Amz-Security-Token' in request.headers:
-                del request.headers['X-Amz-Security-Token']
-            request.headers['X-Amz-Security-Token'] = self.credentials.token
+            if "X-Amz-Security-Token" in request.headers:
+                del request.headers["X-Amz-Security-Token"]
+            request.headers["X-Amz-Security-Token"] = self.credentials.token
 
-        if not request.context.get('payload_signing_enabled', True):
-            if 'X-Amz-Content-SHA256' in request.headers:
-                del request.headers['X-Amz-Content-SHA256']
-            request.headers['X-Amz-Content-SHA256'] = UNSIGNED_PAYLOAD
+        if not request.context.get("payload_signing_enabled", True):
+            if "X-Amz-Content-SHA256" in request.headers:
+                del request.headers["X-Amz-Content-SHA256"]
+            request.headers["X-Amz-Content-SHA256"] = UNSIGNED_PAYLOAD
 
     def _set_necessary_date_headers(self, request):
         # The spec allows for either the Date _or_ the X-Amz-Date value to be
         # used so we check both.  If there's a Date header, we use the date
         # header.  Otherwise we use the X-Amz-Date header.
-        if 'Date' in request.headers:
-            del request.headers['Date']
+        if "Date" in request.headers:
+            del request.headers["Date"]
             datetime_timestamp = datetime.datetime.strptime(
-                request.context['timestamp'], SIGV4_TIMESTAMP
+                request.context["timestamp"], SIGV4_TIMESTAMP
             )
-            request.headers['Date'] = formatdate(
+            request.headers["Date"] = formatdate(
                 int(calendar.timegm(datetime_timestamp.timetuple()))
             )
-            if 'X-Amz-Date' in request.headers:
-                del request.headers['X-Amz-Date']
+            if "X-Amz-Date" in request.headers:
+                del request.headers["X-Amz-Date"]
         else:
-            if 'X-Amz-Date' in request.headers:
-                del request.headers['X-Amz-Date']
-            request.headers['X-Amz-Date'] = request.context['timestamp']
+            if "X-Amz-Date" in request.headers:
+                del request.headers["X-Amz-Date"]
+            request.headers["X-Amz-Date"] = request.context["timestamp"]
 
 
 class SigV4QueryAuth(SigV4Auth):
     DEFAULT_EXPIRES = 3600
 
-    def __init__(
-        self, credentials, service_name, region_name, expires=DEFAULT_EXPIRES
-    ):
+    def __init__(self, credentials, service_name, region_name, expires=DEFAULT_EXPIRES):
         super().__init__(credentials, service_name, region_name)
         self._expires = expires
 
     def _modify_request_before_signing(self, request):
         # We automatically set this header, so if it's the auto-set value we
         # want to get rid of it since it doesn't make sense for presigned urls.
-        content_type = request.headers.get('content-type')
-        blacklisted_content_type = (
-            'application/x-www-form-urlencoded; charset=utf-8'
-        )
+        content_type = request.headers.get("content-type")
+        blacklisted_content_type = "application/x-www-form-urlencoded; charset=utf-8"
         if content_type == blacklisted_content_type:
-            del request.headers['content-type']
+            del request.headers["content-type"]
 
         # Note that we're not including X-Amz-Signature.
         # From the docs: "The Canonical Query String must include all the query
@@ -392,14 +380,14 @@ class SigV4QueryAuth(SigV4Auth):
         signed_headers = self.signed_headers(self.headers_to_sign(request))
 
         auth_params = {
-            'X-Amz-Algorithm': 'AWS4-HMAC-SHA256',
-            'X-Amz-Credential': self.scope(request),
-            'X-Amz-Date': request.context['timestamp'],
-            'X-Amz-Expires': self._expires,
-            'X-Amz-SignedHeaders': signed_headers,
+            "X-Amz-Algorithm": "AWS4-HMAC-SHA256",
+            "X-Amz-Credential": self.scope(request),
+            "X-Amz-Date": request.context["timestamp"],
+            "X-Amz-Expires": self._expires,
+            "X-Amz-SignedHeaders": signed_headers,
         }
         if self.credentials.token is not None:
-            auth_params['X-Amz-Security-Token'] = self.credentials.token
+            auth_params["X-Amz-Security-Token"] = self.credentials.token
         # Now parse the original query string to a dict, inject our new query
         # params, and serialize back to a query string.
         url_parts = urlsplit(request.url)
@@ -418,17 +406,15 @@ class SigV4QueryAuth(SigV4Auth):
         # new_query_params.update(op_params)
         # new_query_params.update(auth_params)
         # percent_encode_sequence(new_query_params)
-        operation_params = ''
+        operation_params = ""
         if request.data:
             # We also need to move the body params into the query string. To
             # do this, we first have to convert it to a dict.
             query_dict.update(_get_body_as_dict(request))
-            request.data = ''
+            request.data = ""
         if query_dict:
-            operation_params = percent_encode_sequence(query_dict) + '&'
-        new_query_string = (
-            f"{operation_params}{percent_encode_sequence(auth_params)}"
-        )
+            operation_params = percent_encode_sequence(query_dict) + "&"
+        new_query_string = f"{operation_params}{percent_encode_sequence(auth_params)}"
         # url_parts is a tuple (and therefore immutable) so we need to create
         # a new url_parts with the new query string.
         # <part>   - <index>
@@ -445,7 +431,7 @@ class SigV4QueryAuth(SigV4Auth):
         # Rather than calculating an "Authorization" header, for the query
         # param quth, we just append an 'X-Amz-Signature' param to the end
         # of the query string.
-        request.url += '&X-Amz-Signature=%s' % signature
+        request.url += "&X-Amz-Signature=%s" % signature
 
 
 class S3SigV4QueryAuth(SigV4QueryAuth):

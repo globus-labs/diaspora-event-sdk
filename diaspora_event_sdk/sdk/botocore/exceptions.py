@@ -12,6 +12,7 @@
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
 
+
 def _exception_from_packed_args(exception_cls, args=None, kwargs=None):
     # This is helpful for reducing Exceptions that only accept kwargs as
     # only positional arguments can be provided for __reduce__
@@ -31,7 +32,7 @@ class BotoCoreError(Exception):
     :ivar msg: The descriptive message associated with the error.
     """
 
-    fmt = 'An unspecified error occurred'
+    fmt = "An unspecified error occurred"
 
     def __init__(self, **kwargs):
         msg = self.fmt.format(**kwargs)
@@ -47,16 +48,13 @@ class NoCredentialsError(BotoCoreError):
     No credentials could be found.
     """
 
-    fmt = 'Unable to locate credentials'
+    fmt = "Unable to locate credentials"
 
 
 class UnseekableStreamError(BotoCoreError):
     """Need to seek a stream, but stream does not support seeking."""
 
-    fmt = (
-        'Need to rewind the stream {stream_object}, but stream '
-        'is not seekable.'
-    )
+    fmt = "Need to rewind the stream {stream_object}, but stream " "is not seekable."
 
 
 class MD5UnavailableError(BotoCoreError):

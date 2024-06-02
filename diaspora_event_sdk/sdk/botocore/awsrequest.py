@@ -38,7 +38,7 @@ class AWSRequestPreparer:
         Botocore either performs these validations elsewhere or otherwise
         consistently provides well formatted URLs.
 
-        This class does not heavily prepare the body. Body preperation is
+        This class does not heavily prepare the body. Body preparation is
         simple and supports only the cases that we document: bytes and
         file-like objects to determine the content-length. This will also
         additionally prepare a body that is a dict to be url encoded params
@@ -61,7 +61,7 @@ class AWSRequestPreparer:
         url = original.url
         if original.params:
             url_parts = urlparse(url)
-            delim = '&' if url_parts.query else '?'
+            delim = "&" if url_parts.query else "?"
             if isinstance(original.params, Mapping):
                 params_to_encode = list(original.params.items())
             else:
@@ -74,35 +74,35 @@ class AWSRequestPreparer:
         headers = HeadersDict(original.headers.items())
 
         # If the transfer encoding or content length is already set, use that
-        if 'Transfer-Encoding' in headers or 'Content-Length' in headers:
+        if "Transfer-Encoding" in headers or "Content-Length" in headers:
             return headers
 
         # Ensure we set the content length when it is expected
-        if original.method not in ('GET', 'HEAD', 'OPTIONS'):
+        if original.method not in ("GET", "HEAD", "OPTIONS"):
             length = self._determine_content_length(prepared_body)
             if length is not None:
-                headers['Content-Length'] = str(length)
+                headers["Content-Length"] = str(length)
             else:
                 # Failed to determine content length, using chunked
                 # NOTE: This shouldn't ever happen in practice
                 body_type = type(prepared_body)
-                logger.debug('Failed to determine length of %s', body_type)
-                headers['Transfer-Encoding'] = 'chunked'
+                logger.debug("Failed to determine length of %s", body_type)
+                headers["Transfer-Encoding"] = "chunked"
 
         return headers
 
     def _to_utf8(self, item):
         key, value = item
         if isinstance(key, str):
-            key = key.encode('utf-8')
+            key = key.encode("utf-8")
         if isinstance(value, str):
-            value = value.encode('utf-8')
+            value = value.encode("utf-8")
         return key, value
 
     def _prepare_body(self, original):
         """Prepares the given HTTP body data."""
         body = original.data
-        if body == b'':
+        if body == b"":
             body = None
 
         if isinstance(body, dict):
@@ -169,7 +169,7 @@ class AWSRequest:
     def body(self):
         body = self.prepare().body
         if isinstance(body, str):
-            body = body.encode('utf-8')
+            body = body.encode("utf-8")
         return body
 
 
@@ -194,10 +194,7 @@ class AWSPreparedRequest:
         self.stream_output = stream_output
 
     def __repr__(self):
-        fmt = (
-            '<AWSPreparedRequest stream_output=%s, method=%s, url=%s, '
-            'headers=%s>'
-        )
+        fmt = "<AWSPreparedRequest stream_output=%s, method=%s, url=%s, " "headers=%s>"
         return fmt % (self.stream_output, self.method, self.url, self.headers)
 
     def reset_stream(self):

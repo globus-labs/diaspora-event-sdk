@@ -12,36 +12,18 @@
 # language governing permissions and limitations under the License.
 
 from urllib.parse import (
-    quote,
-    urlencode,
-    unquote,
     unquote_plus,
-    urlparse,
-    urlsplit,
-    urlunsplit,
-    urljoin,
-    parse_qsl,
-    parse_qs,
 )
-import json
-from itertools import zip_longest
-from email.utils import formatdate
-from base64 import encodebytes
 from io import IOBase as _IOBase
-from http.client import HTTPResponse
 import copy
-import datetime
 import sys
 import inspect
-import warnings
 import hashlib
 from http.client import HTTPMessage
 import logging
 import shlex
 import re
 import os
-from collections import OrderedDict
-from collections.abc import MutableMapping
 from math import floor
 
 # from dateutil.tz import tzlocal
@@ -84,7 +66,7 @@ def ensure_unicode(s, encoding=None, errors=None):
     return s
 
 
-def ensure_bytes(s, encoding='utf-8', errors='strict'):
+def ensure_bytes(s, encoding="utf-8", errors="strict"):
     if isinstance(s, str):
         return s.encode(encoding, errors)
     if isinstance(s, bytes):
@@ -212,7 +194,7 @@ def _windows_shell_split(s):
     is_quoted = False
     num_backslashes = 0
     for character in s:
-        if character == '\\':
+        if character == "\\":
             # We can't simply append backslashes because we don't know if
             # they are being used as escape characters or not. Instead we
             # keep track of how many we've encountered and handle them when
@@ -222,7 +204,7 @@ def _windows_shell_split(s):
             if num_backslashes > 0:
                 # The backslashes are in a chain leading up to a double
                 # quote, so they are escaping each other.
-                buff.append('\\' * int(floor(num_backslashes / 2)))
+                buff.append("\\" * int(floor(num_backslashes / 2)))
                 remainder = num_backslashes % 2
                 num_backslashes = 0
                 if remainder == 1:
@@ -241,24 +223,24 @@ def _windows_shell_split(s):
             # sure it sticks around if there's nothing else between quotes.
             # If there is other stuff between quotes, the empty string will
             # disappear during the joining process.
-            buff.append('')
-        elif character in [' ', '\t'] and not is_quoted:
+            buff.append("")
+        elif character in [" ", "\t"] and not is_quoted:
             # Since the backslashes aren't leading up to a quote, we put in
             # the exact number of backslashes.
             if num_backslashes > 0:
-                buff.append('\\' * num_backslashes)
+                buff.append("\\" * num_backslashes)
                 num_backslashes = 0
 
             # Excess whitespace is ignored, so only add the components list
             # if there is anything in the buffer.
             if buff:
-                components.append(''.join(buff))
+                components.append("".join(buff))
                 buff = []
         else:
             # Since the backslashes aren't leading up to a quote, we put in
             # the exact number of backslashes.
             if num_backslashes > 0:
-                buff.append('\\' * num_backslashes)
+                buff.append("\\" * num_backslashes)
                 num_backslashes = 0
             buff.append(character)
 
@@ -269,11 +251,11 @@ def _windows_shell_split(s):
     # There may be some leftover backslashes, so we need to add them in.
     # There's no quote so we add the exact number.
     if num_backslashes > 0:
-        buff.append('\\' * num_backslashes)
+        buff.append("\\" * num_backslashes)
 
     # Add the final component in if there is anything in the buffer.
     if buff:
-        components.append(''.join(buff))
+        components.append("".join(buff))
 
     return components
 
@@ -292,11 +274,11 @@ def _windows_shell_split(s):
 
 # Detect if CRT is available for use
 try:
-    import awscrt.auth  # type: ignore[import]
+    import awscrt.auth  # type: ignore[import]  # noqa: F401
 
     # Allow user opt-out if needed
-    disabled = os.environ.get('BOTO_DISABLE_CRT', "false")
-    HAS_CRT = not disabled.lower() == 'true'
+    disabled = os.environ.get("BOTO_DISABLE_CRT", "false")
+    HAS_CRT = not disabled.lower() == "true"
 except ImportError:
     HAS_CRT = False
 
@@ -333,20 +315,19 @@ _variations = [
     "(?:(?:%(hex)s:){0,6}%(hex)s)?::",
 ]
 
-UNRESERVED_PAT = (
-    r"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._!\-~"
-)
+UNRESERVED_PAT = r"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._!\-~"
 IPV6_PAT = "(?:" + "|".join([x % _subs for x in _variations]) + ")"
 ZONE_ID_PAT = "(?:%25|%)(?:[" + UNRESERVED_PAT + "]|%[a-fA-F0-9]{2})+"
 IPV6_ADDRZ_PAT = r"\[" + IPV6_PAT + r"(?:" + ZONE_ID_PAT + r")?\]"
 IPV6_ADDRZ_RE = re.compile("^" + IPV6_ADDRZ_PAT + "$")
 
 # These are the characters that are stripped by post-bpo-43882 urlparse().
-UNSAFE_URL_CHARS = frozenset('\t\r\n')
+UNSAFE_URL_CHARS = frozenset("\t\r\n")
 
 # Detect if gzip is available for use
 try:
-    import gzip
+    import gzip  # noqa: F401
+
     HAS_GZIP = True
 except ImportError:
     HAS_GZIP = False

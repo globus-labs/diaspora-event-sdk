@@ -4,7 +4,15 @@ from pathlib import Path
 
 from setuptools import setup, find_packages
 
-TEST_REQUIRES = ["pytest", "pytest-cov", "coverage", "mypy", "tox", "check-manifest"]
+TEST_REQUIRES = [
+    "pytest",
+    "pytest-cov",
+    "coverage",
+    "mypy",
+    "tox",
+    "check-manifest",
+    "pre-commit",
+]
 
 
 def parse_version():
