@@ -36,7 +36,7 @@ long_description = (directory / "README.md").read_text()
 setup(
     name="diaspora-event-sdk",
     version=parse_version(),
-    description="SDK of Diaspora Event Fabric: Resilience-enabling services for science from HPC to edge",
+    description="Diaspora Event Fabric SDK",
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(),
@@ -50,4 +50,16 @@ setup(
         "kafka-python": ["kafka-python"],
         "test": TEST_REQUIRES,
     },
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+    ],
 )
