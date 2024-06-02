@@ -2,9 +2,17 @@ import os
 import re
 from pathlib import Path
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
-TEST_REQUIRES = ["pytest", "pytest-cov", "coverage", "mypy", "tox", "check-manifest"]
+TEST_REQUIRES = [
+    "pytest",
+    "pytest-cov",
+    "coverage",
+    "mypy",
+    "tox",
+    "check-manifest",
+    "pre-commit",
+]
 
 
 def parse_version():

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import os
 import pathlib
 
@@ -8,7 +7,6 @@ from globus_sdk.tokenstorage import SQLiteAdapter
 
 from .._environments import _get_envname
 from .client_login import get_client_login, is_client_login
-from .globus_auth import internal_auth_client
 
 
 def _home() -> pathlib.Path:
