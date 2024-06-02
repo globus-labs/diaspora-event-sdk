@@ -4,7 +4,6 @@ import logging
 from globus_sdk import ConfidentialAppAuthClient
 from diaspora_event_sdk import Client
 from diaspora_event_sdk.sdk.login_manager import tokenstore
-from diaspora_event_sdk.sdk._environments import get_web_service_url
 
 # Configure module-level logger
 logging.basicConfig(

@@ -17,7 +17,7 @@ try:
         def token(self):
             token, _ = generate_auth_token("us-east-1")
             return token
-except Exception as e:
+except Exception:
     kafka_available = False
 
 
@@ -90,7 +90,7 @@ def block_until_ready(max_minutes=5):
                 value={"message": "Synchronous message from Diaspora SDK"},
             )
             result["producer_connection_test"] = future.get(timeout=10)
-        except Exception as e:
+        except Exception:
             pass
 
     def consumer_connection_test(result):
@@ -103,7 +103,7 @@ def block_until_ready(max_minutes=5):
             for msg in consumer:
                 result["consumer_connection_test"] = msg
                 break
-        except Exception as e:
+        except Exception:
             pass
 
     result, retry_count = {}, 0
