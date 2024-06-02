@@ -10,7 +10,7 @@ pip install "diaspora-event-sdk[kafka-python]"
 ```
 
 ### Alternative Installation: Without Kafka Client Library
-To use alternative Kafka client libraries (e.g., `confluent-kafka-python`, `aiokafka`, and libraries for other programming languages), you can install the SDK without the `kafka-python` dependency. This option still provides topic-level access control (authorization) and login credential management features.
+To use alternative Kafka client libraries (e.g., `confluent-kafka-python`, `aiokafka`, and libraries for other programming laguages), you can install the SDK without the `kafka-python` dependency. This option still provides topic-level access control (authorization) and login credential management features.
 
 To install the SDK without `kafka-python`, use:
 ```bash

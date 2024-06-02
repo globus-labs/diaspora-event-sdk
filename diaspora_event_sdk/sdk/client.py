@@ -28,8 +28,7 @@ class Client:
             self.login_manager.ensure_logged_in()
 
         self.web_client = self.login_manager.get_web_client(
-            base_url=self.web_service_address
-        )
+            base_url=self.web_service_address)
         self.auth_client = self.login_manager.get_auth_client()
         self.subject_openid = self.auth_client.oauth2_userinfo()["sub"]
 
@@ -154,9 +153,7 @@ class Client:
         """
         Increases the number of partitions for a given topic to the specified new partition count.
         """
-        return self.web_client.update_topic_partitions(
-            self.subject_openid, topic, new_partitions
-        )
+        return self.web_client.update_topic_partitions(self.subject_openid, topic, new_partitions)
 
     @requires_login
     def reset_topic(self, topic):
@@ -170,18 +167,14 @@ class Client:
         """
         Authorizes another user to access a registered topic under the invoker's account.
         """
-        return self.web_client.grant_user_access(
-            self.subject_openid, topic, user, "grant"
-        )
+        return self.web_client.grant_user_access(self.subject_openid, topic, user, "grant")
 
     @requires_login
     def revoke_user_access(self, topic, user):
         """
         Removes access permissions for another user from a registered topic under the invoker's account.
         """
-        return self.web_client.grant_user_access(
-            self.subject_openid, topic, user, "revoke"
-        )
+        return self.web_client.grant_user_access(self.subject_openid, topic, user, "revoke")
 
     @requires_login
     def list_topic_users(self, topic):
@@ -200,16 +193,10 @@ class Client:
     @requires_login
     def create_trigger(self, topic, function, function_configs, trigger_configs):
         """
-        Creates a new trigger under the user's account with specific function and invocation configurations.
+        Creates a new trigger under the user's account with specific function and invocation configurations. 
         """
         return self.web_client.create_trigger(
-            self.subject_openid,
-            topic,
-            function,
-            "create",
-            function_configs,
-            trigger_configs,
-        )
+            self.subject_openid, topic, function, "create", function_configs, trigger_configs)
 
     @requires_login
     def delete_trigger(self, topic, function):
@@ -217,28 +204,27 @@ class Client:
         Deletes a trigger and related AWS resources, while the associated topic remains unaffected.
         """
         return self.web_client.create_trigger(
-            self.subject_openid, topic, function, "delete", {}, {}
-        )
+            self.subject_openid, topic, function, "delete", {}, {})
 
     @requires_login
     def update_trigger(self, trigger_uuid, trigger_configs):
         """
         Updates invocation configurations of an existing trigger, identified by its unique trigger UUID.
         """
-        return self.web_client.update_trigger(
-            self.subject_openid, trigger_uuid, trigger_configs
-        )
+        return self.web_client.update_trigger(self.subject_openid, trigger_uuid, trigger_configs)
 
     @requires_login
     def list_log_streams(self, trigger):
         """
         List log streams of a trigger under the user's account
         """
-        return self.web_client.list_log_streams(self.subject_openid, trigger)
+        return self.web_client.list_log_streams(
+            self.subject_openid, trigger)
 
     @requires_login
     def get_log_events(self, trigger, stream):
         """
         Get events in a particular log stream of a trigger under the user's account
         """
-        return self.web_client.get_log_events(self.subject_openid, trigger, stream)
+        return self.web_client.get_log_events(
+            self.subject_openid, trigger, stream)

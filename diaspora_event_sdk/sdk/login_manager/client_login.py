@@ -4,7 +4,6 @@ Logic for using client identities with the Diaspora SDK
 The design is based on the Globus CLI client login:
 https://github.com/globus/globus-cli/blob/main/src/globus_cli/login_manager/client_login.py
 """
-
 from __future__ import annotations
 
 import logging

@@ -2,7 +2,6 @@
 #  SPDX-License-Identifier: Apache-2.0
 
 import base64
-
 # import logging
 from datetime import datetime, timezone
 from urllib.parse import parse_qs, urlparse
@@ -12,7 +11,6 @@ from urllib.parse import parse_qs, urlparse
 # import pkg_resources
 from .botocore.auth import SigV4QueryAuth
 from .botocore.awsrequest import AWSRequest
-
 # from botocore.config import Config
 from .botocore.credentials import Credentials
 
@@ -27,7 +25,7 @@ LIB_NAME = "aws-msk-iam-sasl-signer-python"
 
 
 def __get_user_agent__():
-    return f"{LIB_NAME}/1.0.1"
+    return (f"{LIB_NAME}/1.0.1")
 
 
 def __get_expiration_time_ms(request):
@@ -39,17 +37,15 @@ def __get_expiration_time_ms(request):
     # Parse the signed request
     parsed_url = urlparse(request.url)
     parsed_ul_params = parse_qs(parsed_url.query)
-    parsed_signing_time = datetime.strptime(
-        parsed_ul_params["X-Amz-Date"][0], "%Y%m%dT%H%M%SZ"
-    )
+    parsed_signing_time = datetime.strptime(parsed_ul_params['X-Amz-Date'][0],
+                                            "%Y%m%dT%H%M%SZ")
 
     # Make the datetime object timezone-aware
     signing_time = parsed_signing_time.replace(tzinfo=timezone.utc)
 
     # Convert the Unix timestamp to milliseconds
-    expiration_timestamp_seconds = (
-        int(signing_time.timestamp()) + DEFAULT_TOKEN_EXPIRY_SECONDS
-    )
+    expiration_timestamp_seconds = int(
+        signing_time.timestamp()) + DEFAULT_TOKEN_EXPIRY_SECONDS
 
     # Get lifetime of token
     expiration_timestamp_ms = expiration_timestamp_seconds * 1000
@@ -78,7 +74,8 @@ def __construct_auth_token(region, aws_credentials):
 
     # Create SigV4 instance
     sig_v4 = SigV4QueryAuth(
-        aws_credentials, SIGNING_NAME, region, expires=DEFAULT_TOKEN_EXPIRY_SECONDS
+        aws_credentials, SIGNING_NAME, region,
+        expires=DEFAULT_TOKEN_EXPIRY_SECONDS
     )
 
     # Create request with url and parameters
@@ -113,12 +110,10 @@ def generate_auth_token(region, aws_debug_creds=False):
 
     # Load credentials
     import os
-
     assert os.environ["AWS_ACCESS_KEY_ID"]
     assert os.environ["AWS_SECRET_ACCESS_KEY"]
 
-    aws_credentials = Credentials(
-        os.environ["AWS_ACCESS_KEY_ID"], os.environ["AWS_SECRET_ACCESS_KEY"]
-    )
+    aws_credentials = Credentials(os.environ["AWS_ACCESS_KEY_ID"],
+                                  os.environ["AWS_SECRET_ACCESS_KEY"])
 
     return __construct_auth_token(region, aws_credentials)

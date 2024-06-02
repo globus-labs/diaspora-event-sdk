@@ -17,10 +17,10 @@ Aside from topic authorization, authentication requires a username (user's OpenI
 
 To avoid errors during this delay, use `block_until_ready()`:
 
-```python
+```python 
 from diaspora_event_sdk import block_until_ready
 assert block_until_ready()
-# now the secret key is ready to use
+# now the secret key is ready to use 
 ```
 
 This function waits until the key activates, usually within a few seconds. Subsequent `block_until_ready()` calls should return even faster. Still, include this in test/setup scripts, but not on the critical (happy) path.
@@ -28,7 +28,7 @@ This function waits until the key activates, usually within a few seconds. Subse
 
 ## Producing or Consuming
 
-Once the topic is registered and the access key and secret key are ready (through `c = GlobusClient()`), we can publish messages to it. The `KafkaProducer` wraps the [Python KafkaProducer](https://kafka-python.readthedocs.io/en/master/apidoc/KafkaProducer.html), and event publication can be either synchronous or asynchronous. Below demonstrates the synchronous approach.
+Once the topic is registered and the access key and secret key are ready (through `c = GlobusClient()`), we can publish messages to it. The `KafkaProducer` wraps the [Python KafkaProducer](https://kafka-python.readthedocs.io/en/master/apidoc/KafkaProducer.html), and event publication can be either synchronous or asynchronous. Below demonstrates the synchronous approach. 
 
 ```python
 from diaspora_event_sdk import KafkaProducer
@@ -70,7 +70,7 @@ If you're opting to use a custom Kafka client library, here are the necessary cl
 | Bootstrap Servers | `c.retrieve_key()['endpoint']`        |
 | Security Protocol | `SASL_SSL`                            |
 | Sasl Mechanism    | `OAUTHBEARER`                         |
-| Username          | `c.retrieve_key()['access_key']`      |
+| Username          | `c.retrieve_key()['access_key']`      |        
 | Password          | `c.retrieve_key()['secret_key']`      |
 
 The bootstrap server address, OAuth access key, and OAuth secret key can be retrieved through `retrieve_key()` and invalidated through `create_key()`. To use Diaspora Event Fabric with `confluent-kafka-python`, please refer to [this guide](https://github.com/aws/aws-msk-iam-sasl-signer-python?tab=readme-ov-file). For other programming languages, please refer to [this post](https://aws.amazon.com/blogs/big-data/amazon-msk-iam-authentication-now-supports-all-programming-languages/).
