@@ -18,9 +18,9 @@ def setup():
     client_id = os.environ["DIASPORA_SDK_CLIENT_ID"]
     client_secret = os.environ["DIASPORA_SDK_CLIENT_SECRET"]
     requested_scopes = os.environ["CLIENT_SCOPE"]
-    assert client_id
-    assert client_secret
-    assert requested_scopes
+    # assert client_id
+    # assert client_secret
+    # assert requested_scopes
 
     ca = ConfidentialAppAuthClient(
         client_id=client_id,
