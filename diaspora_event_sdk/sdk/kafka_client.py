@@ -26,15 +26,25 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
     Retrieve default Diaspora event fabric connection configurations for Kafka clients.
     Merges default configurations with custom ones provided.
     """
+
+    bootstrap_servers = None
     try:
-        keys = Client().retrieve_key()
-        os.environ["AWS_ACCESS_KEY_ID"] = keys["access_key"]
-        os.environ["AWS_SECRET_ACCESS_KEY"] = keys["secret_key"]
+        if (
+            "OCTOPUS_AWS_ACCESS_KEY_ID" not in os.environ
+            and "OCTOPUS_AWS_SECRET_ACCESS_KEY" not in os.environ
+            and "OCTOPUS_BOOTSTRAP_SERVERS" not in os.environ
+        ):
+            keys = Client().retrieve_key()
+            os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"] = keys["access_key"]
+            os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"] = keys["secret_key"]
+            bootstrap_servers = keys["endpoint"]
+        else:
+            bootstrap_servers = os.environ["OCTOPUS_BOOTSTRAP_SERVERS"]
     except Exception as e:
         raise RuntimeError("Failed to retrieve Kafka keys") from e
 
     conf = {
-        "bootstrap_servers": keys["endpoint"],
+        "bootstrap_servers": bootstrap_servers,
         "security_protocol": "SASL_SSL",
         "sasl_mechanism": "OAUTHBEARER",
         "api_version": (3, 5, 1),
