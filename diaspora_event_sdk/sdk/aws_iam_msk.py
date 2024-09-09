@@ -114,11 +114,12 @@ def generate_auth_token(region, aws_debug_creds=False):
     # Load credentials
     import os
 
-    assert os.environ["AWS_ACCESS_KEY_ID"]
-    assert os.environ["AWS_SECRET_ACCESS_KEY"]
+    assert os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"]
+    assert os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"]
 
     aws_credentials = Credentials(
-        os.environ["AWS_ACCESS_KEY_ID"], os.environ["AWS_SECRET_ACCESS_KEY"]
+        os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"],
+        os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"],
     )
 
     return __construct_auth_token(region, aws_credentials)
