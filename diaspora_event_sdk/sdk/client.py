@@ -31,7 +31,7 @@ class Client:
             base_url=self.web_service_address
         )
         self.auth_client = self.login_manager.get_auth_client()
-        self.subject_openid = self.auth_client.oauth2_userinfo()["sub"]
+        self.subject_openid = self.auth_client.userinfo()["sub"]
 
     def logout(self):
         """Remove credentials from your local system"""
