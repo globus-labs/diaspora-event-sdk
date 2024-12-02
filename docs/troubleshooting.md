@@ -81,4 +81,5 @@ If machine A is logged in with Globus Auth credentials and has the AWS secret ke
 
 If both machines have a valid secret key in storage.db, calling create_key() on one machine will not update the key on the other. This desynchronization can cause block_until_ready() to timeout on the machine with the outdated key.
 
+
 We would like to change this behavior in a future update.
