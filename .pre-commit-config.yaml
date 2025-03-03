@@ -15,7 +15,7 @@ repos:
       - id: check-merge-conflict
       - id: name-tests-test
   - repo: 'https://github.com/codespell-project/codespell'
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: codespell
   - repo: https://github.com/nbQA-dev/nbQA
@@ -27,14 +27,14 @@ repos:
     hooks:
       - id: nbstripout
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.8.0
+    rev: v0.9.9
     hooks:
       - id: ruff
         args:
           - '--fix'
       - id: ruff-format
   - repo: 'https://github.com/pre-commit/mirrors-mypy'
-    rev: v1.13.0
+    rev: v1.15.0
     hooks:
       - id: mypy
         additional_dependencies: []
