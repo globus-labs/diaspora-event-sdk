@@ -66,6 +66,7 @@ def test_register_topic(setup, client):
 
 def test_list_topics(setup, client):
     topics = client.list_topics()
+    print(client.subject_openid, topics)
     assert topics["status"] == "success"
     assert isinstance(topics["topics"], list)
     assert len(topics["topics"]) > 0
@@ -116,7 +117,7 @@ def test_reset_topic(setup, client):
 def test_user_access_management(setup, client):
     topic = "topic" + client.subject_openid[-12:]
     client.register_topic(topic)
-    user_id = "e2a8169b-feef-4d56-8eba-ab12747bee04"
+    user_id = "diaspora-cicd"
     grant_response = client.grant_user_access(topic, user_id)
     assert grant_response["status"] in ["success", "no-op"]
     assert "message" in grant_response
