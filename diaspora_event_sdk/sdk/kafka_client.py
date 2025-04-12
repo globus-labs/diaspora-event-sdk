@@ -11,9 +11,10 @@ kafka_available = True
 try:
     from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
     from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
+    from kafka.sasl.oauth import AbstractTokenProvider  # type: ignore[import,import-not-found]
     import os
 
-    class MSKTokenProvider:
+    class MSKTokenProvider(AbstractTokenProvider):
         def token(self):
             token, _ = generate_auth_token("us-east-1")
             return token
@@ -30,8 +31,8 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
     try:
         if (
             "OCTOPUS_AWS_ACCESS_KEY_ID" not in os.environ
-            and "OCTOPUS_AWS_SECRET_ACCESS_KEY" not in os.environ
-            and "OCTOPUS_BOOTSTRAP_SERVERS" not in os.environ
+            or "OCTOPUS_AWS_SECRET_ACCESS_KEY" not in os.environ
+            or "OCTOPUS_BOOTSTRAP_SERVERS" not in os.environ
         ):
             keys = Client().retrieve_key()
             os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"] = keys["access_key"]
