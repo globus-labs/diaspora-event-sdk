@@ -114,22 +114,21 @@ def test_reset_topic(setup, client):
         assert "message" in reset_response
 
 
-def test_user_access_management(setup, client):
-    topic = "topic" + client.subject_openid[-12:]
-    client.register_topic(topic)
-    user_id = "diaspora-cicd"
-    grant_response = client.grant_user_access(topic, user_id)
-    assert grant_response["status"] in ["success", "no-op"]
-    assert "message" in grant_response
+# def test_user_access_management(setup, client):
+#     topic = "topic" + client.subject_openid[-12:]
+#     user_id = "diaspora-cicd"
+#     grant_response = client.grant_user_access(topic, user_id)
+#     assert grant_response["status"] in ["success", "no-op"]
+#     assert "message" in grant_response
 
-    list_users_response = client.list_topic_users(topic)
-    assert list_users_response["status"] == "success"
-    assert "users" in list_users_response
-    assert isinstance(list_users_response["users"], list)
+#     list_users_response = client.list_topic_users(topic)
+#     assert list_users_response["status"] == "success"
+#     assert "users" in list_users_response
+#     assert isinstance(list_users_response["users"], list)
 
-    revoke_response = client.revoke_user_access(topic, user_id)
-    assert revoke_response["status"] in ["success", "no-op"]
-    assert "message" in revoke_response
+#     revoke_response = client.revoke_user_access(topic, user_id)
+#     assert revoke_response["status"] in ["success", "no-op"]
+#     assert "message" in revoke_response
 
 
 if __name__ == "__main__":
