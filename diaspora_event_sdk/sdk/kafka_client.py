@@ -1,18 +1,21 @@
 import json
-from typing import Dict, Any
-import warnings
 import time
+import warnings
+from typing import Any, Dict
 
-from .client import Client
 from .aws_iam_msk import generate_auth_token
+from .client import Client
 
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
 kafka_available = True
 try:
-    from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
-    from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
-    from kafka.sasl.oauth import AbstractTokenProvider  # type: ignore[import,import-not-found]
     import os
+
+    from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
+    from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
+    from kafka.sasl.oauth import (
+        AbstractTokenProvider,  # type: ignore[import,import-not-found]
+    )
 
     class MSKTokenProvider(AbstractTokenProvider):
         def token(self):
@@ -56,15 +59,86 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
 if kafka_available:
 
     class KafkaProducer(KProd):
-        def __init__(self, **configs):
+        """
+        Wrapper around KProd that:
+        - Requires at least one topic
+        - Sets a default JSON serializer
+        - Blocks until all topics have partition metadata
+        """
+
+        def __init__(self, *topics, **configs):
+            if not topics:
+                raise ValueError("KafkaProducer requires at least one topic")
+            self.topics = topics
+
             configs.setdefault(
-                "value_serializer", lambda v: json.dumps(v).encode("utf-8")
+                "value_serializer",
+                lambda v: json.dumps(v).encode("utf-8"),
             )
+
             super().__init__(**get_diaspora_config(configs))
+            self._block_until_ready()
+
+        def _block_until_ready(self) -> None:
+            """
+            Block until all topics have partition metadata.
+
+            Loops forever, retrying every 0.5 seconds, and only returns once
+            *all* topics have at least one partition.
+            """
+            while True:
+                try:
+                    for topic in self.topics:
+                        partitions = self.partitions_for(topic)
+
+                        # partitions_for() may return None or an empty set if
+                        # metadata is not yet available.
+                        if not partitions or 0 not in partitions:
+                            # Force a retry cycle for *all* topics.
+                            raise RuntimeError(
+                                f"Topic {topic!r} has no partition metadata yet"
+                            )
+
+                    # If we got here, every topic has at least one partition.
+                    return
+                except Exception as e:
+                    print(e)
+                    time.sleep(0.5)
 
     class KafkaConsumer(KCons):
         def __init__(self, *topics, **configs):
+            if not topics:
+                raise ValueError("KafkaProducer requires at least one topic")
+            self.topics = topics
+
             super().__init__(*topics, **get_diaspora_config(configs))
+            self._block_until_ready()
+
+        def _block_until_ready(self) -> None:
+            """
+            Block until all topics have partition metadata.
+
+            Loops forever, retrying every 0.5 seconds, and only returns once
+            *all* topics have at least one partition.
+            """
+            while True:
+                try:
+                    for topic in self.topics:
+                        partitions = self.partitions_for_topic(topic)
+
+                        # partitions_for_topic() may return None or an empty set if
+                        # metadata is not yet available.
+                        if not partitions or 0 not in partitions:
+                            # Force a retry cycle for *all* topics.
+                            raise RuntimeError(
+                                f"Topic {topic!r} has no partition metadata yet"
+                            )
+
+                    # If we got here, every topic has at least one partition.
+                    return
+                except Exception as e:
+                    print(e)
+                    time.sleep(0.5)
 
 else:
     # Create dummy classes that issue a warning when instantiated
