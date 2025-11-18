@@ -167,7 +167,7 @@ def block_until_ready(max_minutes=5):
 
     def producer_connection_test(result):
         try:
-            producer = KafkaProducer(max_block_ms=10 * 1000)
+            producer = KafkaProducer("__connection_test", max_block_ms=10 * 1000)
             future = producer.send(
                 topic="__connection_test",
                 value={"message": "Synchronous message from Diaspora SDK"},
