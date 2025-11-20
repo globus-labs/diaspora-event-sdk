@@ -81,29 +81,16 @@ if kafka_available:
 
         def _block_until_ready(self) -> None:
             """
-            Block until all topics have partition metadata.
+            Verify that all topics have partition metadata.
 
-            Loops forever, retrying every 0.5 seconds, and only returns once
-            *all* topics have at least one partition.
+            For each topic in ``self.topics``, fetches partition metadata and checks that
+            partition 0 exists. Raises ``RuntimeError`` if any topic does not yet have
+            partition metadata.
             """
-            while True:
-                try:
-                    for topic in self.topics:
-                        partitions = self.partitions_for(topic)
-
-                        # partitions_for() may return None or an empty set if
-                        # metadata is not yet available.
-                        if not partitions or 0 not in partitions:
-                            # Force a retry cycle for *all* topics.
-                            raise RuntimeError(
-                                f"Topic {topic!r} has no partition metadata yet"
-                            )
-
-                    # If we got here, every topic has at least one partition.
-                    return
-                except Exception as e:
-                    print(e)
-                    time.sleep(0.5)
+            for topic in self.topics:
+                partitions = self.partitions_for(topic)
+                if not partitions or 0 not in partitions:
+                    raise RuntimeError(f"Topic {topic!r} has no partition metadata yet")
 
     class KafkaConsumer(KCons):
         def __init__(self, *topics, **configs):
@@ -116,29 +103,17 @@ if kafka_available:
 
         def _block_until_ready(self) -> None:
             """
-            Block until all topics have partition metadata.
+            Verify that all topics have partition metadata.
 
-            Loops forever, retrying every 0.5 seconds, and only returns once
-            *all* topics have at least one partition.
+            For each topic in ``self.topics``, fetches partition metadata and checks that
+            partition 0 exists. Raises ``RuntimeError`` if any topic does not yet have
+            partition metadata.
             """
-            while True:
-                try:
-                    for topic in self.topics:
-                        partitions = self.partitions_for_topic(topic)
+            for topic in self.topics:
+                partitions = self.partitions_for_topic(topic)
+                if not partitions or 0 not in partitions:
+                    raise RuntimeError(f"Topic {topic!r} has no partition metadata yet")
 
-                        # partitions_for_topic() may return None or an empty set if
-                        # metadata is not yet available.
-                        if not partitions or 0 not in partitions:
-                            # Force a retry cycle for *all* topics.
-                            raise RuntimeError(
-                                f"Topic {topic!r} has no partition metadata yet"
-                            )
-
-                    # If we got here, every topic has at least one partition.
-                    return
-                except Exception as e:
-                    print(e)
-                    time.sleep(0.5)
 
 else:
     # Create dummy classes that issue a warning when instantiated
@@ -155,6 +130,80 @@ else:
                 "KafkaConsumer is not available. Initialization is a no-op.",
                 RuntimeWarning,
             )
+
+
+def create_producer(*topics, **kwargs) -> KafkaProducer:
+    """
+    Create a KafkaProducer for the given topics, with a fast initial attempt.
+
+    This method first tries to create a producer immediately using existing
+    credentials—useful when topics are already ready and the key is valid.
+    If that attempt fails (e.g., missing or expired key, metadata not ready),
+    the method regenerates the key once and then retries producer creation
+    every 0.5 seconds until successful.
+
+    Parameters
+    ----------
+    topics : list[str] or str
+        Topic or list of topics to which the producer will publish.
+
+    Returns
+    -------
+    KafkaProducer
+        A ready KafkaProducer instance.
+    """
+    # --- Fast path: try with current credentials ---
+    try:
+        return KafkaProducer(*topics, **kwargs)
+    except Exception as e:
+        print(f"Initial producer creation failed: {e}")
+
+    # --- Slow path: refresh key and retry until ready ---
+    print(f"Create key: {Client().create_key()}")
+
+    while True:
+        try:
+            return KafkaProducer(*topics, **kwargs)
+        except Exception as e:
+            print(f"Retrying producer creation: {e}")
+            time.sleep(0.5)
+
+
+def create_consumer(*topics, **kwargs) -> KafkaConsumer:
+    """
+    Create a KafkaConsumer for the given topics, mirroring create_producer() logic.
+
+    Fast-path: try to create a consumer immediately using existing credentials.
+    Slow-path: regenerate key once and retry every 0.5s until successful.
+
+    Parameters
+    ----------
+    topics : list[str] or str
+        Topic or list of topics to subscribe to.
+
+    kwargs : dict
+        Additional arguments passed to KafkaConsumer (e.g., auto_offset_reset).
+
+    Returns
+    -------
+    KafkaConsumer
+        A ready KafkaConsumer instance.
+    """
+    # --- Fast path: try with current credentials ---
+    try:
+        return KafkaConsumer(*topics, **kwargs)
+    except Exception as e:
+        print(f"Initial consumer creation failed: {e}")
+
+    # --- Slow path: refresh key and retry until ready ---
+    print(f"Create key: {Client().create_key()}")
+
+    while True:
+        try:
+            return KafkaConsumer(*topics, **kwargs)
+        except Exception as e:
+            print(f"Retrying consumer creation: {e}")
+            time.sleep(0.5)
 
 
 # TODO: mypy diaspora_event_sdk/sdk/kafka_client.py --disallow-untyped-defs

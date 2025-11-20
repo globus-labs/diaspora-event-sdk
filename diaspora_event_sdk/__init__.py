@@ -10,6 +10,15 @@ from diaspora_event_sdk.sdk.kafka_client import (
     KafkaProducer,
     KafkaConsumer,
     block_until_ready,
+    create_producer,
+    create_consumer,
 )
 
-__all__ = ("Client", "KafkaProducer", "KafkaConsumer", "block_until_ready")
+__all__ = (
+    "Client",
+    "KafkaProducer",
+    "KafkaConsumer",
+    "block_until_ready",
+    "create_producer",
+    "create_consumer",
+)
