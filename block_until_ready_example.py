@@ -19,7 +19,9 @@ print(f"Using this topic: {new_topic}")
 
 if new_topic not in my_topics["topics"]:
     print("Topic not found, registering it…")
-    print(c.register_topic(new_topic))
+    register_result = c.register_topic(new_topic)
+    print("Registration result: {register_result}")
+    assert register_result is not None, "The API should never return None, but it does"
 
     # Wait until topic appears
     while True:
