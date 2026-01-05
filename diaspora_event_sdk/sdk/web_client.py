@@ -28,6 +28,240 @@ class WebClient(globus_sdk.BaseClient):
     def create_key(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
         return self.get("/api/v2/create_key", headers={"Subject": str(subject)})
 
+    def create_key_v3(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
+        """
+        Call the v3 create_key endpoint (POST /api/v3/key).
+        Creates a new access key for the user, replacing any existing key.
+        Note: This endpoint requires both Subject and Authorization headers.
+        The Authorization header is automatically added by the BaseClient's authorizer.
+        """
+        # The BaseClient will automatically add Authorization header via authorizer
+        # We also explicitly set it in headers to ensure it's passed correctly
+        headers = {"Subject": str(subject)}
+
+        # Get access token from authorizer if available
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    # Extract token if it's in "Bearer <token>" format
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                # If we can't get it from authorizer, BaseClient will handle it
+                pass
+
+        return self.post("/api/v3/key", headers=headers)
+
+    def retrieve_key_v3(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
+        """
+        Call the v3 get_key endpoint (GET /api/v3/key).
+        Retrieves key from DynamoDB if exists, or creates a new one if not.
+        Note: This endpoint requires both Subject and Authorization headers.
+        The Authorization header is automatically added by the BaseClient's authorizer.
+        """
+        # The BaseClient will automatically add Authorization header via authorizer
+        # We also explicitly set it in headers to ensure it's passed correctly
+        headers = {"Subject": str(subject)}
+
+        # Get access token from authorizer if available
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    # Extract token if it's in "Bearer <token>" format
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                # If we can't get it from authorizer, BaseClient will handle it
+                pass
+
+        return self.get("/api/v3/key", headers=headers)
+
+    def delete_key_v3(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
+        """
+        Call the v3 delete_key endpoint (DELETE /api/v3/key).
+        Deletes access keys from IAM and DynamoDB for the user.
+        Note: This endpoint requires both Subject and Authorization headers.
+        The Authorization header is automatically added by the BaseClient's authorizer.
+        """
+        # The BaseClient will automatically add Authorization header via authorizer
+        # We also explicitly set it in headers to ensure it's passed correctly
+        headers = {"Subject": str(subject)}
+
+        # Get access token from authorizer if available
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    # Extract token if it's in "Bearer <token>" format
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                # If we can't get it from authorizer, BaseClient will handle it
+                pass
+
+        return self.delete("/api/v3/key", headers=headers)
+
+    def list_topics_v3(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
+        """
+        Call the v3 list_topics endpoint.
+        Note: This endpoint requires both Subject and Authorization headers.
+        """
+        headers = {"Subject": str(subject)}
+
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+
+        return self.get("/api/v3/topics", headers=headers)
+
+    def register_topic_v3(
+        self, subject: UUID_LIKE_T, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """
+        Call the v3 register_topic endpoint.
+        Note: This endpoint requires both Subject and Authorization headers.
+        """
+        headers = {"Subject": str(subject)}
+
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+
+        return self.put(f"/api/v3/topic/{topic}", headers=headers)
+
+    def unregister_topic_v3(
+        self, subject: UUID_LIKE_T, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """
+        Call the v3 unregister_topic endpoint.
+        Note: This endpoint requires both Subject and Authorization headers.
+        """
+        headers = {"Subject": str(subject)}
+
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+
+        return self.delete(f"/api/v3/topic/{topic}", headers=headers)
+
+    def create_namespace_v3(
+        self, subject: UUID_LIKE_T, namespace: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """Call the v3 create_namespace endpoint (POST /api/v3/namespace)."""
+        headers = {
+            "Subject": str(subject),
+            "Namespace": namespace,
+        }
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+        return self.post("/api/v3/namespace", headers=headers)
+
+    def list_namespaces_v3(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
+        """Call the v3 list_namespaces endpoint (GET /api/v3/namespace)."""
+        headers = {"Subject": str(subject)}
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+        return self.get("/api/v3/namespace", headers=headers)
+
+    def delete_namespace_v3(
+        self, subject: UUID_LIKE_T, namespace: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """Call the v3 delete_namespace endpoint (DELETE /api/v3/namespace)."""
+        headers = {
+            "Subject": str(subject),
+            "Namespace": namespace,
+        }
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+        return self.delete("/api/v3/namespace", headers=headers)
+
+    def create_topic_v3(
+        self, subject: UUID_LIKE_T, namespace: str, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """Call the v3 create_topic endpoint (POST /api/v3/{namespace}/{topic})."""
+        headers = {"Subject": str(subject)}
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+        return self.post(f"/api/v3/{namespace}/{topic}", headers=headers)
+
+    def delete_topic_v3(
+        self, subject: UUID_LIKE_T, namespace: str, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """Call the v3 delete_topic endpoint (DELETE /api/v3/{namespace}/{topic})."""
+        headers = {"Subject": str(subject)}
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+        return self.delete(f"/api/v3/{namespace}/{topic}", headers=headers)
+
     def list_topics(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
         return self.get("/api/v2/topics", headers={"Subject": str(subject)})
 
