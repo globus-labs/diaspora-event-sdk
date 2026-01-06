@@ -262,6 +262,23 @@ class WebClient(globus_sdk.BaseClient):
                 pass
         return self.delete(f"/api/v3/{namespace}/{topic}", headers=headers)
 
+    def recreate_topic_v3(
+        self, subject: UUID_LIKE_T, namespace: str, topic: str
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """Call the v3 recreate_topic endpoint (PUT /api/v3/{namespace}/{topic}/recreate)."""
+        headers = {"Subject": str(subject)}
+        if hasattr(self, "authorizer") and self.authorizer is not None:
+            try:
+                auth_header = self.authorizer.get_authorization_header()
+                if auth_header:
+                    if auth_header.startswith("Bearer "):
+                        headers["Authorization"] = auth_header
+                    else:
+                        headers["Authorization"] = f"Bearer {auth_header}"
+            except Exception:
+                pass
+        return self.put(f"/api/v3/{namespace}/{topic}/recreate", headers=headers)
+
     def list_topics(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
         return self.get("/api/v2/topics", headers={"Subject": str(subject)})
 
