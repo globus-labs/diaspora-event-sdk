@@ -37,7 +37,27 @@ class Client:
         self.login_manager.logout()
 
     @requires_login
-    def create_key_v3(self):
+    def create_user(self):
+        """
+        Create an IAM user with policy and namespace for the current user (POST /api/v3/user).
+        Returns status, message, user_created, policy_created, policy_attached,
+        namespace_created, and namespace.
+        """
+        resp = self.web_client.create_user_v3(self.subject_openid)
+        return resp.data if hasattr(resp, "data") else resp
+
+    @requires_login
+    def delete_user(self):
+        """
+        Delete the IAM user and all associated resources for the current user (DELETE /api/v3/user).
+        Returns status, message, namespaces_deleted, keys_deleted, policy_detached,
+        policy_deleted, and user_deleted.
+        """
+        resp = self.web_client.delete_user_v3(self.subject_openid)
+        return resp.data if hasattr(resp, "data") else resp
+
+    @requires_login
+    def create_key(self):
         """
         Create a new access key for the current user (POST /api/v3/key).
         This will replace any existing access key.
@@ -47,7 +67,7 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def retrieve_key_v3(self):
+    def get_key(self):
         """
         Retrieve a key from DynamoDB if it exists, or create a new one if not (GET /api/v3/key).
         Returns the access key, secret key, create_date, endpoint, and retrieved_from_dynamodb flag.
@@ -56,7 +76,7 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def delete_key_v3(self):
+    def delete_key(self):
         """
         Delete access keys from IAM and DynamoDB for the current user (DELETE /api/v3/key).
         Returns status and message.
@@ -65,43 +85,7 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def list_topics_v3(self):
-        """
-        List topics for the current user.
-        Returns a list of topics the user has access to.
-        """
-        resp = self.web_client.list_topics_v3(self.subject_openid)
-        return resp.data if hasattr(resp, "data") else resp
-
-    @requires_login
-    def register_topic_v3(self, topic: str):
-        """
-        Register a topic for the current user.
-        Returns status and message.
-        """
-        resp = self.web_client.register_topic_v3(self.subject_openid, topic)
-        return resp.data if hasattr(resp, "data") else resp
-
-    @requires_login
-    def unregister_topic_v3(self, topic: str):
-        """
-        Unregister a topic for the current user.
-        Returns status and message.
-        """
-        resp = self.web_client.unregister_topic_v3(self.subject_openid, topic)
-        return resp.data if hasattr(resp, "data") else resp
-
-    @requires_login
-    def create_namespace_v3(self, namespace: str):
-        """
-        Create a namespace for the current user (POST /api/v3/namespace).
-        Returns status, message, and namespaces list.
-        """
-        resp = self.web_client.create_namespace_v3(self.subject_openid, namespace)
-        return resp.data if hasattr(resp, "data") else resp
-
-    @requires_login
-    def list_namespaces_v3(self):
+    def list_namespaces(self):
         """
         List all namespaces owned by the current user and their topics (GET /api/v3/namespace).
         Returns status, message, and namespaces dict (namespace -> list of topics).
@@ -110,16 +94,7 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def delete_namespace_v3(self, namespace: str):
-        """
-        Delete a namespace for the current user (DELETE /api/v3/namespace).
-        Returns status, message, and remaining namespaces list.
-        """
-        resp = self.web_client.delete_namespace_v3(self.subject_openid, namespace)
-        return resp.data if hasattr(resp, "data") else resp
-
-    @requires_login
-    def create_topic_v3(self, namespace: str, topic: str):
+    def create_topic(self, namespace: str, topic: str):
         """
         Create a topic under a namespace (POST /api/v3/{namespace}/{topic}).
         Returns status, message, namespace, and topic.
@@ -128,7 +103,7 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def delete_topic_v3(self, namespace: str, topic: str):
+    def delete_topic(self, namespace: str, topic: str):
         """
         Delete a topic from a namespace (DELETE /api/v3/{namespace}/{topic}).
         Returns status, message, namespace, and topic.
@@ -137,11 +112,10 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def recreate_topic_v3(self, namespace: str, topic: str):
+    def recreate_topic(self, namespace: str, topic: str):
         """
         Recreate a topic by deleting and recreating it via KafkaAdminClient (PUT /api/v3/{namespace}/{topic}/recreate).
         Returns status, message, namespace, and topic.
         """
         resp = self.web_client.recreate_topic_v3(self.subject_openid, namespace, topic)
         return resp.data if hasattr(resp, "data") else resp
-
