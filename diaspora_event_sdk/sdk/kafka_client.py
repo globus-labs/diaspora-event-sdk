@@ -134,10 +134,12 @@ def reliable_client_creation() -> str:
         client = None
         try:
             client = Client()
-            key_result = client.get_key()
-            # If key is fresh (just created), wait for IAM policy to propagate
-            if key_result.get("fresh", False):
-                time.sleep(8)
+            client.create_key()
+            # key_result = client.create_key()
+            # print(f"Key result: {key_result}")
+            # # If key is fresh (just created), wait for IAM policy to propagate
+            # if key_result.get("fresh", False):
+            #     time.sleep(8)
 
             topic_name = f"topic-{str(uuid.uuid4())[:5]}"
             kafka_topic = f"{client.namespace}.{topic_name}"
