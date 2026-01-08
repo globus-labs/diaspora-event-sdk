@@ -31,6 +31,7 @@ class Client:
         )
         self.auth_client = self.login_manager.get_auth_client()
         self.subject_openid = self.auth_client.userinfo()["sub"]
+        self.namespace = f"ns-{self.subject_openid.replace('-', '')[-12:]}"
 
     def logout(self):
         """Remove credentials from your local system"""
@@ -92,28 +93,30 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def create_topic(self, namespace: str, topic: str):
+    def create_topic(self, topic: str):
         """
-        Create a topic under a namespace (POST /api/v3/{namespace}/{topic}).
+        Create a topic under the user's default namespace (POST /api/v3/{namespace}/{topic}).
         Returns status, message, and topics list.
         """
-        resp = self.web_client.create_topic(self.subject_openid, namespace, topic)
+        resp = self.web_client.create_topic(self.subject_openid, self.namespace, topic)
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def delete_topic(self, namespace: str, topic: str):
+    def delete_topic(self, topic: str):
         """
-        Delete a topic from a namespace (DELETE /api/v3/{namespace}/{topic}).
+        Delete a topic from the user's default namespace (DELETE /api/v3/{namespace}/{topic}).
         Returns status, message, and topics list.
         """
-        resp = self.web_client.delete_topic(self.subject_openid, namespace, topic)
+        resp = self.web_client.delete_topic(self.subject_openid, self.namespace, topic)
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def recreate_topic(self, namespace: str, topic: str):
+    def recreate_topic(self, topic: str):
         """
-        Recreate a topic by deleting and recreating it (PUT /api/v3/{namespace}/{topic}/recreate).
+        Recreate a topic in the user's default namespace by deleting and recreating it (PUT /api/v3/{namespace}/{topic}/recreate).
         Returns status and message.
         """
-        resp = self.web_client.recreate_topic(self.subject_openid, namespace, topic)
+        resp = self.web_client.recreate_topic(
+            self.subject_openid, self.namespace, topic
+        )
         return resp.data if hasattr(resp, "data") else resp

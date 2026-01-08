@@ -116,24 +116,12 @@ else:
             )
 
 
-def reliable_topic_creation() -> str:
+def reliable_client_creation() -> str:
     """
-    Reliably create a topic with retry logic for handling failures.
-
-    This function in a while loop:
-    1. Calls create_key to ensure access keys are available
-    2. Calls list_namespaces to get an existing namespace (or uses default)
-    3. Creates a random topic under the namespace
-    4. Creates a producer to test producing messages
-    5. Creates a consumer to test consuming from the topic
-    6. Returns the topic name if all work out
-    7. Otherwise retries from the beginning
+    Reliably create a client and test topic operations with retry logic.
 
     Returns:
         str: The full topic name in format "namespace.topic-name"
-
-    Raises:
-        Exception: If topic creation fails after retries or if client cannot be created.
     """
     attempt = 0
     while True:
@@ -143,167 +131,44 @@ def reliable_topic_creation() -> str:
 
         topic_name = None
         kafka_topic = None
-        namespace = None
         client = None
         try:
-            # Create client
-            # os.environ["DIASPORA_SDK_ENVIRONMENT"] = "local"
             client = Client()
+            key_result = client.get_key()
+            # If key is fresh (just created), wait for IAM policy to propagate
+            if key_result.get("fresh", False):
+                time.sleep(8)
 
-            # Create key
-            print(f"Creating key (attempt {attempt})...")
-            key_result = client.create_key()
-            print(f"Key creation: {key_result}")
-            time.sleep(8)  # Wait for IAM policy to propagate
-
-            # Get namespaces
-            print(f"Listing namespaces (attempt {attempt})...")
-            namespaces_result = client.list_namespaces()
-            print(f"Namespaces: {namespaces_result}")
-
-            if namespaces_result.get("status") != "success":
-                logger.info(f"Failed to list namespaces: {namespaces_result}")
-                continue
-
-            # Get first namespace or use default
-            namespaces = namespaces_result.get("namespaces", {})
-            if not namespaces:
-                # No namespaces found, user needs to create one first
-                logger.info("No namespaces found. User must create a namespace first.")
-                raise RuntimeError(
-                    "No namespaces found. Please create a namespace first using create_user() or create_namespace()."
-                )
-
-            # Use the first namespace
-            namespace = list(namespaces.keys())[0]
-            print(f"Using namespace: {namespace}")
-
-            # Create topic with random name
             topic_name = f"topic-{str(uuid.uuid4())[:5]}"
-            print(f"Creating topic {topic_name} under namespace {namespace}...")
-            topic_result = client.create_topic(namespace, topic_name)
-            print(f"Topic creation: {topic_result}")
+            kafka_topic = f"{client.namespace}.{topic_name}"
+            client.create_topic(topic_name)
+            time.sleep(3)  # Wait after topic creation before produce
 
-            if topic_result.get("status") != "success":
-                logger.info(f"Failed to create topic: {topic_result}")
-                continue
-
-            kafka_topic = f"{namespace}.{topic_name}"
-
-            # Wait a bit for topic to be fully created
-            time.sleep(3)
-
-            # Create producer and test produce
-            print(f"Testing producer for topic {kafka_topic}...")
-            producer_ok = False
-            producer = None
-            try:
-                producer = KafkaProducer(kafka_topic)
-                future = producer.send(kafka_topic, {"test": "message"})
-                result = future.get(timeout=30)
-                producer.close()
-                print(f"Producer test successful: offset={result.offset}")
-                producer_ok = True
-            except Exception as e:
-                error_msg = f"Producer error: {type(e).__name__}: {str(e)}"
-                logger.info(error_msg)
-                print(error_msg)
-                try:
-                    if producer:
-                        producer.close()
-                except Exception:
-                    pass
-                try:
-                    client.delete_topic(namespace, topic_name)
-                except Exception:
-                    pass
-                continue
-
-            if not producer_ok:
-                continue
-
-            # Wait a bit after producer test before testing consumer
-            time.sleep(3)
-
-            # Create consumer and test consume
-            print(f"Testing consumer for topic {kafka_topic}...")
-            consumer_ok = False
-            consumer = None
-            try:
-                consumer = KafkaConsumer(kafka_topic, auto_offset_reset="earliest")
-                messages = consumer.poll(timeout_ms=10000)
-                consumer.close()
-                print(
-                    f"Consumer test successful: polled {len(messages)} message batches"
+            producer = KafkaProducer(kafka_topic)
+            for i in range(3):
+                future = producer.send(
+                    kafka_topic, {"message_id": i + 1, "content": f"Message {i + 1}"}
                 )
-                consumer_ok = True
-            except Exception as e:
-                error_msg = f"Consumer error: {type(e).__name__}: {str(e)}"
-                logger.info(error_msg)
-                print(error_msg)
-                try:
-                    if consumer:
-                        consumer.close()
-                except Exception:
-                    pass
-                try:
-                    client.delete_topic(namespace, topic_name)
-                except Exception:
-                    pass
-                continue
+                future.get(timeout=30)
+            producer.close()
 
-            if not consumer_ok:
-                continue
+            time.sleep(2)
+            consumer = KafkaConsumer(kafka_topic, auto_offset_reset="earliest")
+            consumer.poll(timeout_ms=10000)
+            consumer.close()
 
-            logger.info(
-                f"reliable_topic_creation completed successfully in {attempt} attempt(s), topic: {kafka_topic}"
-            )
-            print(f"Successfully created and verified topic: {kafka_topic}")
+            client.delete_topic(topic_name)
             return kafka_topic
         except Exception as e:
-            error_msg = (
-                f"Unexpected error in attempt {attempt}: {type(e).__name__}: {str(e)}"
-            )
-            logger.info(error_msg)
-            print(error_msg)
-            if topic_name and namespace and client:
+            logger.info(f"Error in attempt {attempt}: {type(e).__name__}: {str(e)}")
+            if client:
                 try:
-                    client.delete_topic(namespace, topic_name)
+                    if topic_name:
+                        client.delete_topic(topic_name)
                 except Exception:
                     pass
-            # Re-raise if it's a non-retryable error (like no namespaces)
-            if isinstance(e, RuntimeError):
-                raise
+                try:
+                    client.delete_user()
+                except Exception:
+                    pass
             continue
-
-
-def reliable_topic_deletion(kafka_topic: str) -> dict:
-    """
-    Delete a topic without deleting the namespace.
-
-    Args:
-        kafka_topic: Full topic name in format "namespace.topic-name"
-
-    Returns:
-        dict: Result from delete_topic API call
-
-    Raises:
-        ValueError: If kafka_topic is not in the correct format
-        Exception: If topic deletion fails
-    """
-    # Parse namespace and topic from kafka_topic
-    if "." not in kafka_topic:
-        raise ValueError(
-            f"kafka_topic must be in format 'namespace.topic-name', got: {kafka_topic}"
-        )
-
-    namespace, topic_name = kafka_topic.split(".", 1)
-
-    # Create client and delete topic
-    client = Client()
-    result = client.delete_topic(namespace, topic_name)
-
-    # Log the results
-    logger.info(f"reliable_topic_deletion result: {result}")
-
-    return result

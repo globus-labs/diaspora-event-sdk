@@ -22,6 +22,8 @@ repos:
     rev: 1.9.1
     hooks:
       - id: nbqa-ruff
+        args:
+          - '--ignore=E402'
   - repo: https://github.com/kynan/nbstripout
     rev: 0.8.2
     hooks:
@@ -37,6 +39,10 @@ repos:
     rev: v1.19.1
     hooks:
       - id: mypy
-        additional_dependencies: []
+        additional_dependencies: ['types-cachetools']
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
 
 exclude: ^diaspora_event_sdk/sdk/botocore/
