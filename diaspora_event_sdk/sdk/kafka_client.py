@@ -47,7 +47,7 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
             or "OCTOPUS_BOOTSTRAP_SERVERS" not in os.environ
         ):
             client = Client()
-            keys = client.get_key()
+            keys = client.create_key()
             os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"] = keys["access_key"]
             os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"] = keys["secret_key"]
             os.environ["OCTOPUS_BOOTSTRAP_SERVERS"] = keys["endpoint"]
@@ -134,16 +134,27 @@ def reliable_client_creation() -> str:
         client = None
         try:
             client = Client()
-            client.create_key()
-            # key_result = client.create_key()
-            # print(f"Key result: {key_result}")
-            # # If key is fresh (just created), wait for IAM policy to propagate
-            # if key_result.get("fresh", False):
-            #     time.sleep(8)
+            key_result = client.create_key()
+
+            # If status is not success, throw exception
+            if key_result.get("status") != "success":
+                raise RuntimeError(
+                    f"Failed to create key: {key_result.get('message', 'Unknown error')}"
+                )
+
+            # If key is fresh (just created), wait for IAM policy to propagate
+            if key_result.get("fresh", False):
+                time.sleep(8)
 
             topic_name = f"topic-{str(uuid.uuid4())[:5]}"
             kafka_topic = f"{client.namespace}.{topic_name}"
-            client.create_topic(topic_name)
+
+            # If status is not success, throw exception
+            topic_result = client.create_topic(topic_name)
+            if topic_result.get("status") != "success":
+                raise RuntimeError(
+                    f"Failed to create topic: {topic_result.get('message', 'Unknown error')}"
+                )
             time.sleep(3)  # Wait after topic creation before produce
 
             producer = KafkaProducer(kafka_topic)
@@ -153,8 +164,8 @@ def reliable_client_creation() -> str:
                 )
                 future.get(timeout=30)
             producer.close()
+            time.sleep(2)  # Wait for the produced messages to be consumed
 
-            time.sleep(2)
             consumer = KafkaConsumer(kafka_topic, auto_offset_reset="earliest")
             consumer.poll(timeout_ms=10000)
             consumer.close()

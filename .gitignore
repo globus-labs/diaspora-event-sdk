@@ -278,3 +278,4 @@ nohup.out
 *.pyc
 *venv*
 .DS_Store
+secrets1.sh

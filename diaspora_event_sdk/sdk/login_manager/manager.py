@@ -19,6 +19,61 @@ from .login_flow import do_link_auth_flow
 log = logging.getLogger(__name__)
 
 
+class FilteredClientCredentialsAuthorizer(globus_sdk.ClientCredentialsAuthorizer):
+    """
+    A custom ClientCredentialsAuthorizer that filters token responses to only
+    include tokens for a specific resource server.
+
+    This is needed when client credentials return tokens for multiple resource
+    servers, but ClientCredentialsAuthorizer expects exactly one token.
+    """
+
+    def __init__(
+        self,
+        confidential_client: globus_sdk.ConfidentialAppAuthClient,
+        scopes: list[str],
+        *,
+        resource_server: str,
+        access_token: str | None = None,
+        expires_at: int | None = None,
+        on_refresh: t.Callable[[globus_sdk.OAuthTokenResponse], None] | None = None,
+    ) -> None:
+        self._target_resource_server = resource_server
+        # Store the original on_refresh callback
+        self._original_on_refresh = on_refresh
+        super().__init__(
+            confidential_client=confidential_client,
+            scopes=scopes,
+            access_token=access_token,
+            expires_at=expires_at,
+            on_refresh=self._filtered_on_refresh,
+        )
+
+    def _extract_token_data(
+        self, res: globus_sdk.OAuthClientCredentialsResponse
+    ) -> dict[str, t.Any]:
+        """
+        Extract token data, filtering to only the target resource server.
+        """
+        token_data = res.by_resource_server
+        if self._target_resource_server in token_data:
+            # Return only the token for the target resource server
+            return token_data[self._target_resource_server]
+        else:
+            raise ValueError(
+                f"Token response does not contain token for {self._target_resource_server}"
+            )
+
+    def _filtered_on_refresh(
+        self, token_response: globus_sdk.OAuthTokenResponse
+    ) -> None:
+        """
+        Call the original on_refresh callback with the filtered token response.
+        """
+        if self._original_on_refresh:
+            self._original_on_refresh(token_response)
+
+
 def _get_diaspora_all_scope() -> str:
     return os.getenv(
         "DIASPORA_SCOPE",
@@ -153,9 +208,13 @@ class LoginManager:
                 expires_at = tokens["expires_at_seconds"]
 
             with self._access_lock:
-                return globus_sdk.ClientCredentialsAuthorizer(
+                # Use a custom authorizer that filters token responses to only
+                # the requested resource server, handling cases where client
+                # credentials return tokens for multiple resource servers
+                return FilteredClientCredentialsAuthorizer(
                     confidential_client=get_client_login(),
                     scopes=scopes,
+                    resource_server=resource_server,
                     access_token=access_token,
                     expires_at=expires_at,
                     on_refresh=self._token_storage.on_refresh,

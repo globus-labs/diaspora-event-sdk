@@ -66,15 +66,6 @@ class Client:
         return resp.data if hasattr(resp, "data") else resp
 
     @requires_login
-    def get_key(self):
-        """
-        Retrieve a key from DynamoDB if it exists, or create a new one if not (GET /api/v3/key).
-        Returns status, message, access_key, secret_key, and create_date.
-        """
-        resp = self.web_client.retrieve_key(self.subject_openid)
-        return resp.data if hasattr(resp, "data") else resp
-
-    @requires_login
     def delete_key(self):
         """
         Delete access keys from IAM and DynamoDB for the current user (DELETE /api/v3/key).

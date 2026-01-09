@@ -36,10 +36,6 @@ class WebClient(globus_sdk.BaseClient):
         """Call the v3 create_key endpoint (POST /api/v3/key)."""
         return self.post("/api/v3/key", headers={"Subject": str(subject)})
 
-    def retrieve_key(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
-        """Call the v3 get_key endpoint (GET /api/v3/key)."""
-        return self.get("/api/v3/key", headers={"Subject": str(subject)})
-
     def delete_key(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
         """Call the v3 delete_key endpoint (DELETE /api/v3/key)."""
         return self.delete("/api/v3/key", headers={"Subject": str(subject)})
