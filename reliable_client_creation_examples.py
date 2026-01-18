@@ -21,13 +21,12 @@ import time
 import argparse
 import traceback
 import os
-import logging
 from datetime import datetime
 
 # Configure logging to show INFO level messages from kafka_client
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# logging.basicConfig(
+#     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+# )
 
 
 def reliable_produce(namespace, topic, num_messages=3, max_retries=3):

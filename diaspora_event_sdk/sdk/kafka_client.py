@@ -41,16 +41,11 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
     """
 
     try:
-        if (
-            "OCTOPUS_AWS_ACCESS_KEY_ID" not in os.environ
-            or "OCTOPUS_AWS_SECRET_ACCESS_KEY" not in os.environ
-            or "OCTOPUS_BOOTSTRAP_SERVERS" not in os.environ
-        ):
-            client = Client()
-            keys = client.create_key()
-            os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"] = keys["access_key"]
-            os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"] = keys["secret_key"]
-            os.environ["OCTOPUS_BOOTSTRAP_SERVERS"] = keys["endpoint"]
+        client = Client()
+        keys = client.create_key()  # create or retrieve key
+        os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"] = keys["access_key"]
+        os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"] = keys["secret_key"]
+        os.environ["OCTOPUS_BOOTSTRAP_SERVERS"] = keys["endpoint"]
 
     except Exception as e:
         raise RuntimeError("Failed to retrieve Kafka keys") from e
