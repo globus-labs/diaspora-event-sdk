@@ -44,7 +44,7 @@ setup(
     license="Apache 2.0",
     url="https://github.com/globus-labs/diaspora-event-sdk",
     install_requires=[
-        "globus-sdk>=3.20.1,<4",
+        "globus-sdk>=3.59.0,<4",
     ],
     extras_require={
         "kafka-python": ["kafka-python"],
