@@ -25,11 +25,11 @@ repos:
         args:
           - '--ignore=E402'
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.2
+    rev: 0.9.0
     hooks:
       - id: nbstripout
   - repo: 'https://github.com/charliermarsh/ruff-pre-commit'
-    rev: v0.14.10
+    rev: v0.14.14
     hooks:
       - id: ruff
         args:
