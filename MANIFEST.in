@@ -2,3 +2,4 @@ include *.md
 include tox.ini
 include mypy.ini
 recursive-include tests *.py
+recursive-include diaspora_event_sdk/examples *
