@@ -9,10 +9,12 @@ from diaspora_event_sdk.sdk.client import Client
 from diaspora_event_sdk.sdk.kafka_client import (
     KafkaProducer,
     KafkaConsumer,
+    reliable_client_creation,
 )
 
 __all__ = (
     "Client",
     "KafkaProducer",
     "KafkaConsumer",
+    "reliable_client_creation",
 )
