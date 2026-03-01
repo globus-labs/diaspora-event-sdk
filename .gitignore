@@ -272,7 +272,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Diaspora Web Service and Action Provider
+# Diaspora
 secrets.sh
 nohup.out
 *.pyc
