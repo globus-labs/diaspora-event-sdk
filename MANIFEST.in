@@ -1,5 +1,6 @@
 include *.md
 include tox.ini
-include mypy.ini
+include setup.cfg
+include .coveragerc
 recursive-include tests *.py
 recursive-include diaspora_event_sdk/examples *

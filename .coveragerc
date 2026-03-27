@@ -1,0 +1,10 @@
+[run]
+source = diaspora_event_sdk
+omit =
+    diaspora_event_sdk/sdk/botocore/*
+    diaspora_event_sdk/examples/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING

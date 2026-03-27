@@ -24,6 +24,7 @@ from hashlib import sha1, sha256
 from .compat import (
     HTTPHeaders,
     ensure_unicode,
+    get_current_datetime,
     parse_qs,
     quote,
     urlsplit,
@@ -50,7 +51,15 @@ PAYLOAD_BUFFER = 1024 * 1024
 ISO8601 = '%Y-%m-%dT%H:%M:%SZ'
 SIGV4_TIMESTAMP = '%Y%m%dT%H%M%SZ'
 SIGNED_HEADERS_BLACKLIST = [
+    'connection',
     'expect',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailer',
+    'transfer-encoding',
+    'upgrade',
     'user-agent',
     'x-amzn-trace-id',
 ]
@@ -308,7 +317,7 @@ class SigV4Auth(BaseSigner):
     def add_auth(self, request):
         if self.credentials is None:
             raise NoCredentialsError()
-        datetime_now = datetime.datetime.utcnow()
+        datetime_now = get_current_datetime()
         request.context['timestamp'] = datetime_now.strftime(SIGV4_TIMESTAMP)
         # This could be a retry.  Make sure the previous
         # authorization header is removed first.
@@ -324,12 +333,12 @@ class SigV4Auth(BaseSigner):
         self._inject_signature_to_request(request, signature)
 
     def _inject_signature_to_request(self, request, signature):
-        auth_str = ['AWS4-HMAC-SHA256 Credential=%s' % self.scope(request)]
+        auth_str = [f'AWS4-HMAC-SHA256 Credential={self.scope(request)}']
         headers_to_sign = self.headers_to_sign(request)
         auth_str.append(
             f"SignedHeaders={self.signed_headers(headers_to_sign)}"
         )
-        auth_str.append('Signature=%s' % signature)
+        auth_str.append(f'Signature={signature}')
         request.headers['Authorization'] = ', '.join(auth_str)
         return request
 
@@ -445,7 +454,7 @@ class SigV4QueryAuth(SigV4Auth):
         # Rather than calculating an "Authorization" header, for the query
         # param quth, we just append an 'X-Amz-Signature' param to the end
         # of the query string.
-        request.url += '&X-Amz-Signature=%s' % signature
+        request.url += f'&X-Amz-Signature={signature}'
 
 
 class S3SigV4QueryAuth(SigV4QueryAuth):

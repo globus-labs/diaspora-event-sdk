@@ -19,7 +19,9 @@ from .compat import ensure_unicode
 
 logger = logging.getLogger(__name__)
 ReadOnlyCredentials = namedtuple(
-    'ReadOnlyCredentials', ['access_key', 'secret_key', 'token']
+    'ReadOnlyCredentials',
+    ['access_key', 'secret_key', 'token', 'account_id'],
+    defaults=(None,),
 )
 
 _DEFAULT_MANDATORY_REFRESH_TIMEOUT = 10 * 60  # 10 min
@@ -37,7 +39,7 @@ class Credentials:
         were found.
     """
 
-    def __init__(self, access_key, secret_key, token=None, method=None):
+    def __init__(self, access_key, secret_key, token=None, method=None, account_id=None):
         self.access_key = access_key
         self.secret_key = secret_key
         self.token = token
@@ -45,6 +47,7 @@ class Credentials:
         if method is None:
             method = 'explicit'
         self.method = method
+        self.account_id = account_id
 
         self._normalize()
 
@@ -62,5 +65,5 @@ class Credentials:
 
     def get_frozen_credentials(self):
         return ReadOnlyCredentials(
-            self.access_key, self.secret_key, self.token
+            self.access_key, self.secret_key, self.token, self.account_id
         )

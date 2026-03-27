@@ -23,6 +23,7 @@ ACTION_TYPE = "Action"
 ACTION_NAME = "kafka-cluster:Connect"
 SIGNING_NAME = "kafka-cluster"
 USER_AGENT_KEY = "User-Agent"
+# TODO: update LIB_NAME and version detection to use diaspora-event-sdk identity
 LIB_NAME = "aws-msk-iam-sasl-signer-python"
 
 
@@ -114,12 +115,14 @@ def generate_auth_token(region, aws_debug_creds=False):
     # Load credentials
     import os
 
-    assert os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"]
-    assert os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"]
+    access_key = os.environ.get("OCTOPUS_AWS_ACCESS_KEY_ID")
+    secret_key = os.environ.get("OCTOPUS_AWS_SECRET_ACCESS_KEY")
+    if not access_key or not secret_key:
+        raise ValueError(
+            "OCTOPUS_AWS_ACCESS_KEY_ID and OCTOPUS_AWS_SECRET_ACCESS_KEY "
+            "environment variables must be set"
+        )
 
-    aws_credentials = Credentials(
-        os.environ["OCTOPUS_AWS_ACCESS_KEY_ID"],
-        os.environ["OCTOPUS_AWS_SECRET_ACCESS_KEY"],
-    )
+    aws_credentials = Credentials(access_key, secret_key)
 
     return __construct_auth_token(region, aws_credentials)
