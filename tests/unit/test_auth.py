@@ -20,12 +20,12 @@ class TestGetClientCreds:
             os.environ,
             {
                 "DIASPORA_SDK_CLIENT_ID": "test-id",
-                "DIASPORA_SDK_CLIENT_SECRET": "test-secret",
+                "DIASPORA_SDK_CLIENT_SECRET": "test-secret",  # pragma: allowlist secret
             },
         ):
             client_id, client_secret = get_client_creds()
             assert client_id == "test-id"
-            assert client_secret == "test-secret"
+            assert client_secret == "test-secret"  # pragma: allowlist secret
 
 
 class TestGetGlobusApp:
@@ -38,7 +38,7 @@ class TestGetGlobusApp:
             os.environ,
             {
                 "DIASPORA_SDK_CLIENT_ID": "test-id",
-                "DIASPORA_SDK_CLIENT_SECRET": "test-secret",
+                "DIASPORA_SDK_CLIENT_SECRET": "test-secret",  # pragma: allowlist secret
             },
         ):
             app = get_globus_app()
@@ -58,7 +58,7 @@ class TestGetGlobusApp:
         from diaspora_event_sdk.sdk.auth.globus_app import get_globus_app
 
         env = {k: v for k, v in os.environ.items() if k != "DIASPORA_SDK_CLIENT_ID"}
-        env["DIASPORA_SDK_CLIENT_SECRET"] = "test-secret"
+        env["DIASPORA_SDK_CLIENT_SECRET"] = "test-secret"  # pragma: allowlist secret
         with mock.patch.dict(os.environ, env, clear=True):
             with pytest.raises(ValueError, match="Both DIASPORA_SDK_CLIENT_ID"):
                 get_globus_app()

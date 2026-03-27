@@ -18,8 +18,14 @@ class TestSigV4TokenStructure:
 
     @pytest.fixture
     def set_fake_aws_creds(self, monkeypatch):
-        monkeypatch.setenv("OCTOPUS_AWS_ACCESS_KEY_ID", "AKIAIOSFODNN7EXAMPLE")
-        monkeypatch.setenv("OCTOPUS_AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+        monkeypatch.setenv(
+            "OCTOPUS_AWS_ACCESS_KEY_ID",
+            "AKIAIOSFODNN7EXAMPLE",  # pragma: allowlist secret
+        )
+        monkeypatch.setenv(
+            "OCTOPUS_AWS_SECRET_ACCESS_KEY",
+            "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",  # pragma: allowlist secret
+        )
 
     def test_token_is_valid_base64(self, set_fake_aws_creds):
         token, expiry_ms = generate_auth_token("us-east-1")
@@ -44,7 +50,7 @@ class TestSigV4TokenStructure:
 
         # Credential should contain the access key and kafka-cluster service
         cred = params["X-Amz-Credential"][0]
-        assert cred.startswith("AKIAIOSFODNN7EXAMPLE/")
+        assert cred.startswith("AKIAIOSFODNN7EXAMPLE/")  # pragma: allowlist secret
         assert "us-east-1/kafka-cluster/aws4_request" in cred
 
     def test_token_contains_action_param(self, set_fake_aws_creds):
@@ -68,6 +74,7 @@ class TestSigV4TokenStructure:
         assert expiry_ms > 0
         # Should be roughly current time + 900s (15min), in ms
         import time
+
         now_ms = int(time.time() * 1000)
         assert abs(expiry_ms - (now_ms + 900_000)) < 5_000  # within 5s tolerance
 
@@ -93,9 +100,9 @@ class TestCredentials:
     """Validate vendored Credentials class matches upstream behavior."""
 
     def test_credentials_basic(self):
-        creds = Credentials("access", "secret")
+        creds = Credentials("access", "secret")  # pragma: allowlist secret
         assert creds.access_key == "access"
-        assert creds.secret_key == "secret"
+        assert creds.secret_key == "secret"  # pragma: allowlist secret
         assert creds.token is None
         assert creds.account_id is None
         assert creds.method == "explicit"
@@ -109,6 +116,6 @@ class TestCredentials:
         creds = Credentials("access", "secret", token="tok", account_id="123")
         frozen = creds.get_frozen_credentials()
         assert frozen.access_key == "access"
-        assert frozen.secret_key == "secret"
+        assert frozen.secret_key == "secret"  # pragma: allowlist secret
         assert frozen.token == "tok"
         assert frozen.account_id == "123"

@@ -62,4 +62,4 @@ jobs:
           python -m pip install -e ".[test]"
 
       - name: Run Tests
-        run: pytest tests/unit/apis_test.py -m integration -vv -s --log-cli-level=INFO
+        run: pytest tests/unit/test_apis.py -m integration -vv -s --log-cli-level=INFO

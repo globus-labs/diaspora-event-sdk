@@ -9,19 +9,21 @@ including topic creation, message production, and consumption.
 # Run: pip install -e '.[kafka-python]'
 
 # Import the reliable topic creation functions
-from diaspora_event_sdk.sdk.kafka_client import (
-    reliable_client_creation,
-    KafkaProducer,
-    KafkaConsumer,
-)
-from diaspora_event_sdk import Client as GlobusClient
-from kafka.errors import KafkaTimeoutError
-import uuid
-import time
 import argparse
-import traceback
 import os
+import time
+import traceback
+import uuid
 from datetime import datetime
+
+from kafka.errors import KafkaTimeoutError
+
+from diaspora_event_sdk import Client as GlobusClient
+from diaspora_event_sdk.sdk.kafka_client import (
+    KafkaConsumer,
+    KafkaProducer,
+    reliable_client_creation,
+)
 
 # Configure logging to show INFO level messages from kafka_client
 # logging.basicConfig(

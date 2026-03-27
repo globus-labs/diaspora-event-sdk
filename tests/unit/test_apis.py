@@ -1,7 +1,9 @@
-import pytest
-import os
 import logging
+import os
 import uuid
+
+import pytest
+
 from diaspora_event_sdk import Client
 
 # Configure module-level logger

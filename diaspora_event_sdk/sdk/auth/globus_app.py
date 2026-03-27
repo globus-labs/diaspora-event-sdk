@@ -1,3 +1,5 @@
+# Adapted from globus-compute SDK (Apache 2.0)
+# https://github.com/globus-labs/globus-compute/blob/main/compute_sdk/globus_compute_sdk/sdk/auth/globus_app.py
 from __future__ import annotations
 
 import os
