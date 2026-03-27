@@ -2,14 +2,51 @@ from __future__ import annotations
 
 import logging
 import os
+import typing as t
 
 import globus_sdk
 
 from ._environments import get_web_service_url
-from .auth.auth_client import DiasporaAuthClient
 from .auth.globus_app import get_globus_app
 
 logger = logging.getLogger(__name__)
+
+
+class FilteredClientCredentialsAuthorizer(globus_sdk.ClientCredentialsAuthorizer):
+    """ClientCredentialsAuthorizer that handles multi-resource-server token responses.
+
+    Some Globus clients return tokens for multiple resource servers in a single
+    client credentials response (e.g., when scopes have dependent scopes).
+    The base ClientCredentialsAuthorizer expects exactly one token.
+
+    This subclass filters the response to only the target resource server.
+    """
+
+    def __init__(
+        self,
+        confidential_client: globus_sdk.ConfidentialAppAuthClient,
+        scopes: list[str],
+        *,
+        resource_server: str,
+        access_token: str | None = None,
+        expires_at: int | None = None,
+        on_refresh: t.Callable | None = None,
+    ) -> None:
+        self._target_resource_server = resource_server
+        super().__init__(
+            confidential_client=confidential_client,
+            scopes=scopes,
+            access_token=access_token,
+            expires_at=expires_at,
+            on_refresh=on_refresh,
+        )
+
+    def _extract_token_data(self, res) -> dict[str, t.Any]:
+        token_data = res.by_resource_server
+        if self._target_resource_server in token_data:
+            return token_data[self._target_resource_server]
+        # Fall back to default behavior if target not found
+        return super()._extract_token_data(res)
 
 
 class Client:
@@ -21,6 +58,7 @@ class Client:
         "DIASPORA_SCOPE",
         "https://auth.globus.org/scopes/2b9d2f5c-fa32-45b5-875b-b24cd343b917/action_all",
     )
+    DIASPORA_RESOURCE_SERVER = "2b9d2f5c-fa32-45b5-875b-b24cd343b917"
 
     def __init__(
         self,
@@ -42,13 +80,54 @@ class Client:
             self.web_client = self._make_web_client(authorizer=authorizer)
         else:
             self.app = app if app else get_globus_app(environment=environment)
-            self.web_client = self._make_web_client(app=self.app)
+            if isinstance(self.app, globus_sdk.ClientApp):
+                # For client credentials, build a filtered authorizer that
+                # handles multi-resource-server token responses
+                web_authorizer = self._make_client_creds_authorizer(
+                    self.app, self.DIASPORA_RESOURCE_SERVER, [self.DIASPORA_SCOPE]
+                )
+                self.web_client = self._make_web_client(authorizer=web_authorizer)
+            else:
+                self.web_client = self._make_web_client(app=self.app)
 
         # Get user identity
-        if self.app:
-            auth_client = DiasporaAuthClient(app=self.app)
+        self._resolve_identity()
+
+    def _make_client_creds_authorizer(
+        self,
+        app: globus_sdk.ClientApp,
+        resource_server: str,
+        scopes: list[str],
+    ) -> FilteredClientCredentialsAuthorizer:
+        """Build a FilteredClientCredentialsAuthorizer for client credentials flow."""
+        from .auth.client_login import get_client_creds
+
+        client_id, client_secret = get_client_creds()
+        confidential_client = globus_sdk.ConfidentialAppAuthClient(
+            client_id=client_id, client_secret=client_secret
+        )
+        return FilteredClientCredentialsAuthorizer(
+            confidential_client=confidential_client,
+            scopes=scopes,
+            resource_server=resource_server,
+        )
+
+    def _resolve_identity(self):
+        """Resolve the user's OpenID subject and namespace."""
+        if isinstance(self.app, globus_sdk.ClientApp):
+            # For client credentials, build a separate filtered authorizer
+            # for the auth resource server (openid scope)
+            from globus_sdk.scopes import AuthScopes
+
+            auth_authorizer = self._make_client_creds_authorizer(
+                self.app, AuthScopes.resource_server, [AuthScopes.openid]
+            )
+            auth_client = globus_sdk.AuthClient(authorizer=auth_authorizer)
+        elif self.app:
+            auth_client = globus_sdk.AuthClient(app=self.app)
         else:
-            auth_client = DiasporaAuthClient(authorizer=authorizer)
+            auth_client = globus_sdk.AuthClient(authorizer=self.authorizer)
+
         self.subject_openid = auth_client.userinfo()["sub"]
         self.namespace = f"ns-{self.subject_openid.replace('-', '')[-12:]}"
 
