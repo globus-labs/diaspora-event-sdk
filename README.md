@@ -14,7 +14,7 @@
 pip install "diaspora-event-sdk[kafka-python]"
 ```
 
-For SDK-only (no Kafka):
+For web service only including consumer RESTful API:
 
 ```bash
 pip install diaspora-event-sdk
@@ -25,20 +25,10 @@ pip install diaspora-event-sdk
 - **[DiasporaDemo.ipynb](diaspora_event_sdk/examples/DiasporaDemo.ipynb)** — Authentication, user/key/topic management, and Kafka produce/consume
 - **[ConsumerRESTDemo.ipynb](diaspora_event_sdk/examples/ConsumerRESTDemo.ipynb)** — Consumer REST API walkthrough (Confluent Kafka REST Proxy v2 compatible)
 
-## License
-
-This project is licensed under the [Apache License 2.0](LICENSE).
-
-### Third-party code
-
-This SDK includes adapted code from the following Apache 2.0-licensed projects:
-
-| Module | Source |
-|--------|--------|
-| `sdk/auth/` | [globus-compute SDK](https://github.com/globus/globus-compute) |
-| `sdk/aws_iam_msk.py` | [aws-msk-iam-sasl-signer-python](https://github.com/aws/aws-msk-iam-sasl-signer-python) |
-| `sdk/botocore/` | [botocore](https://github.com/boto/botocore) |
-
 ## Acknowledgment
 
 We thank the entire team of the Diaspora Project for their helpful comments and feedback. This material is based upon work supported by the U.S. Department of Energy (DOE), Office of Science, Office of Advanced Scientific Computing Research, under Contract DE-AC02-06CH11357.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
