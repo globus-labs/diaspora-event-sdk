@@ -1,28 +1,36 @@
-from typing import Optional
+from __future__ import annotations
+
+import os
 
 import globus_sdk
+from globus_sdk import Scope
 
 from diaspora_event_sdk.sdk.utils.uuid_like import UUID_LIKE_T
 
 from ._environments import get_web_service_url
 
+DIASPORA_RESOURCE_SERVER = "2b9d2f5c-fa32-45b5-875b-b24cd343b917"
+DIASPORA_SCOPE = os.getenv(
+    "DIASPORA_SCOPE",
+    f"https://auth.globus.org/scopes/{DIASPORA_RESOURCE_SERVER}/action_all",
+)
+
 
 class WebClient(globus_sdk.BaseClient):
+    resource_server = DIASPORA_RESOURCE_SERVER
+    default_scope_requirements = [Scope(DIASPORA_SCOPE)]
+
     def __init__(
         self,
         *,
-        environment: Optional[str] = None,
-        base_url: Optional[str] = None,
-        app_name: Optional[str] = None,
+        environment: str | None = None,
+        base_url: str | None = None,
         **kwargs,
     ):
         if base_url is None:
             base_url = get_web_service_url(environment)
 
         super().__init__(environment=environment, base_url=base_url, **kwargs)
-
-        self._user_app_name = None
-        self.user_app_name = app_name
 
     def create_user(self, subject: UUID_LIKE_T) -> globus_sdk.GlobusHTTPResponse:
         """Call the v3 create_user endpoint (POST /api/v3/user)."""

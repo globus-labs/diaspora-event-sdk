@@ -2,7 +2,7 @@ import os
 import re
 from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import find_namespace_packages, setup
 
 TEST_REQUIRES = [
     "pytest",
@@ -39,12 +39,14 @@ setup(
     description="Diaspora Event Fabric SDK",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_packages(),
+    packages=find_namespace_packages(),
     include_package_data=True,
+    package_data={"diaspora_event_sdk": ["py.typed"]},
+    python_requires=">=3.10",
     license="Apache 2.0",
     url="https://github.com/globus-labs/diaspora-event-sdk",
     install_requires=[
-        "globus-sdk>=3.59.0,<4",
+        "globus-sdk>=4.4.0,<5",
     ],
     extras_require={
         "kafka-python": ["kafka-python"],
@@ -55,11 +57,9 @@ setup(
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )

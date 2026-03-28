@@ -18,7 +18,10 @@ try:
 
     from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
     from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
-    from kafka.errors import KafkaTimeoutError, TopicAuthorizationFailedError  # type: ignore[import,import-not-found]
+    from kafka.errors import (  # type: ignore[import,import-not-found]
+        KafkaTimeoutError,
+        TopicAuthorizationFailedError,
+    )
     from kafka.sasl.oauth import (
         AbstractTokenProvider,  # type: ignore[import,import-not-found]
     )

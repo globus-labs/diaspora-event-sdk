@@ -8,15 +8,27 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python Versions](https://img.shields.io/pypi/pyversions/diaspora-event-sdk.svg)](https://pypi.org/project/diaspora-event-sdk/)
 
+## Installation
 
-## Installation Guide
-### Recommended Method: With `kafka-python`
-To integrate with Diaspora Event Fabric using `KafkaProducer` and `KafkaConsumer`, install the SDK with `kafka-python`:
 ```bash
 pip install "diaspora-event-sdk[kafka-python]"
 ```
 
-## Using Diaspora Event Fabric SDK
-Check out the examples in [`diaspora_event_sdk/examples/`](diaspora_event_sdk/examples/):
-- [DiasporaDemoV3.ipynb](diaspora_event_sdk/examples/DiasporaDemoV3.ipynb) — Quickstart notebook covering user/key/topic management and Kafka produce/consume
-- [reliable_client_creation_examples.ipynb](diaspora_event_sdk/examples/reliable_client_creation_examples.ipynb) — Reliable client creation with retry logic
+For web service only including consumer RESTful API:
+
+```bash
+pip install diaspora-event-sdk
+```
+
+## Examples
+
+- **[DiasporaDemo.ipynb](diaspora_event_sdk/examples/DiasporaDemo.ipynb)** — Authentication, user/key/topic management, and Kafka produce/consume
+- **[ConsumerRESTDemo.ipynb](diaspora_event_sdk/examples/ConsumerRESTDemo.ipynb)** — Consumer REST API walkthrough (Confluent Kafka REST Proxy v2 compatible)
+
+## Acknowledgment
+
+We thank the entire team of the Diaspora Project for their helpful comments and feedback. This material is based upon work supported by the U.S. Department of Energy (DOE), Office of Science, Office of Advanced Scientific Computing Research, under Contract DE-AC02-06CH11357.
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).

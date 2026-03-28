@@ -153,9 +153,9 @@ def total_seconds(delta):
 # Checks to see if md5 is available on this system. A given system might not
 # have access to it for various reasons, such as FIPS mode being enabled.
 try:
-    hashlib.md5()
+    hashlib.md5(usedforsecurity=False)
     MD5_AVAILABLE = True
-except ValueError:
+except (AttributeError, ValueError):
     MD5_AVAILABLE = False
 
 
@@ -288,6 +288,14 @@ def _windows_shell_split(s):
 #         return (tzlocal, tzwinlocal)
 #     else:
 #         return (tzlocal,)
+
+
+def get_current_datetime(remove_tzinfo=True):
+    """Retrieve the current timezone in UTC, with or without an explicit timezone."""
+    datetime_now = datetime.datetime.now(datetime.timezone.utc)
+    if remove_tzinfo:
+        datetime_now = datetime_now.replace(tzinfo=None)
+    return datetime_now
 
 
 # Detect if CRT is available for use

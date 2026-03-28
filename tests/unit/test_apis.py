@@ -1,7 +1,9 @@
-import pytest
-import os
 import logging
+import os
 import uuid
+
+import pytest
+
 from diaspora_event_sdk import Client
 
 # Configure module-level logger
@@ -31,11 +33,6 @@ def client():
     assert os.environ.get("DIASPORA_SDK_CLIENT_SECRET"), (
         "DIASPORA_SDK_CLIENT_SECRET must be set"
     )
-
-    # Set DIASPORA_SCOPE if CLIENT_SCOPE is set (for backward compatibility)
-    # This ensures the LoginManager uses the correct scope for client credentials
-    if "CLIENT_SCOPE" in os.environ and "DIASPORA_SCOPE" not in os.environ:
-        os.environ["DIASPORA_SCOPE"] = os.environ["CLIENT_SCOPE"]
 
     return Client()
 
