@@ -1,5 +1,5 @@
 # Adapted from globus-compute SDK (Apache 2.0)
-# https://github.com/globus-labs/globus-compute/blob/main/compute_sdk/globus_compute_sdk/sdk/compute_dir.py
+# https://github.com/globus/globus-compute/blob/main/compute_sdk/globus_compute_sdk/sdk/compute_dir.py
 from __future__ import annotations
 
 import os
