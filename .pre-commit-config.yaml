@@ -25,7 +25,7 @@ repos:
     hooks:
       - id: nbqa-ruff
         args:
-          - '--ignore=E402'
+          - '--ignore=E402,N999'
   - repo: https://github.com/kynan/nbstripout
     rev: 0.9.1
     hooks:
