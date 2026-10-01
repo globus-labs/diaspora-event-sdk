@@ -3,7 +3,7 @@ import logging
 import time
 import uuid
 import warnings
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from .aws_iam_msk import generate_auth_token
 from .client import Client
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
 kafka_available = True
+kafka_import_error: Optional[Exception] = None
 try:
     import os
 
@@ -30,8 +31,9 @@ try:
         def token(self):
             token, _ = generate_auth_token("us-east-1")
             return token
-except Exception:
+except Exception as e:
     kafka_available = False
+    kafka_import_error = e
     # Fallback if kafka-python is not available
     TopicAuthorizationFailedError = Exception
     KafkaTimeoutError = Exception
@@ -98,20 +100,30 @@ if kafka_available:
 
 
 else:
-    # Create dummy classes that issue a warning when instantiated
-    class KafkaProducer:  # type: ignore[no-redef]
-        def __init__(self, *args, **kwargs):
+
+    def _kafka_unavailable(name: str) -> None:
+        # kafka-python not installed: warn, as before. Installed but
+        # incompatible (e.g. 3.x, which renamed kafka.sasl): raise.
+        error = kafka_import_error
+        if isinstance(error, ModuleNotFoundError) and error.name == "kafka":
             warnings.warn(
-                "KafkaProducer is not available. Initialization is a no-op.",
+                f"{name} is not available. Initialization is a no-op.",
                 RuntimeWarning,
             )
+            return
+        raise ImportError(
+            f"{name} needs kafka-python>=2.1,<3: {error!r}. "
+            'Install it with: pip install "kafka-python>=2.1,<3"'
+        ) from error
+
+    # Create dummy classes that warn, or raise, when instantiated
+    class KafkaProducer:  # type: ignore[no-redef]
+        def __init__(self, *args, **kwargs):
+            _kafka_unavailable("KafkaProducer")
 
     class KafkaConsumer:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
-            warnings.warn(
-                "KafkaConsumer is not available. Initialization is a no-op.",
-                RuntimeWarning,
-            )
+            _kafka_unavailable("KafkaConsumer")
 
 
 def reliable_client_creation() -> str:
