@@ -18,7 +18,10 @@ DIASPORA_SCOPE = os.getenv(
 
 class WebClient(globus_sdk.BaseClient):
     resource_server = DIASPORA_RESOURCE_SERVER
-    default_scope_requirements = [Scope(DIASPORA_SCOPE)]
+
+    @property
+    def default_scope_requirements(self) -> list[Scope]:
+        return [Scope(DIASPORA_SCOPE)]
 
     def __init__(
         self,

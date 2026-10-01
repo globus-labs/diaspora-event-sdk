@@ -59,9 +59,11 @@ class TestGetGlobusApp:
 
         env = {k: v for k, v in os.environ.items() if k != "DIASPORA_SDK_CLIENT_ID"}
         env["DIASPORA_SDK_CLIENT_SECRET"] = "test-secret"  # pragma: allowlist secret
-        with mock.patch.dict(os.environ, env, clear=True):
-            with pytest.raises(ValueError, match="Both DIASPORA_SDK_CLIENT_ID"):
-                get_globus_app()
+        with (
+            mock.patch.dict(os.environ, env, clear=True),
+            pytest.raises(ValueError, match="Both DIASPORA_SDK_CLIENT_ID"),
+        ):
+            get_globus_app()
 
 
 class TestClientInit:

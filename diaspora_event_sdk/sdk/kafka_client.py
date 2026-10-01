@@ -3,7 +3,7 @@ import logging
 import time
 import uuid
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any
 
 from .aws_iam_msk import generate_auth_token
 from .client import Client
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # If kafka-python is not installed, Kafka functionality is not available through diaspora-event-sdk.
 kafka_available = True
-kafka_import_error: Optional[Exception] = None
+kafka_import_error: Exception | None = None
 try:
     import os
 
@@ -31,7 +31,9 @@ try:
         def token(self):
             token, _ = generate_auth_token("us-east-1")
             return token
-except Exception as e:
+# Any failure, not only ImportError, must leave the rest of the SDK usable;
+# the stubs raise kafka_import_error when they are used.
+except Exception as e:  # noqa: BLE001
     kafka_available = False
     kafka_import_error = e
     # Fallback if kafka-python is not available
@@ -39,7 +41,9 @@ except Exception as e:
     KafkaTimeoutError = Exception
 
 
-def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
+def get_diaspora_config(
+    extra_configs: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """
     Retrieve default Diaspora event fabric connection configurations for Kafka clients.
     Merges default configurations with custom ones provided.
@@ -62,7 +66,7 @@ def get_diaspora_config(extra_configs: Dict[str, Any] = {}) -> Dict[str, Any]:
         "api_version": (3, 8, 1),
         "sasl_oauth_token_provider": MSKTokenProvider(),
     }
-    conf.update(extra_configs)
+    conf.update(extra_configs or {})
     return conf
 
 
@@ -182,16 +186,16 @@ def reliable_client_creation() -> str:
 
             client.delete_topic(topic_name)
             return kafka_topic
-        except Exception as e:
-            logger.info(f"Error in attempt {attempt}: {type(e).__name__}: {str(e)}")
+        except Exception as e:  # noqa: BLE001 - any failure is retried
+            logger.info(f"Error in attempt {attempt}: {type(e).__name__}: {e!s}")
             if client:
                 try:
                     if topic_name:
                         client.delete_topic(topic_name)
                 except Exception:
-                    pass
+                    logger.debug("Failed to delete the test topic", exc_info=True)
                 try:
                     client.delete_user()
                 except Exception:
-                    pass
+                    logger.debug("Failed to delete the user", exc_info=True)
             continue

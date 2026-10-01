@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import typing as t
 import uuid
 
-# older pythons don't like aliases using |, even with a __future__ import
-UUID_LIKE_T = t.Union[uuid.UUID, str]
+UUID_LIKE_T = uuid.UUID | str
 
 
 def as_uuid(uuid_like: UUID_LIKE_T) -> uuid.UUID:
