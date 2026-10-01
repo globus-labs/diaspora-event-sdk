@@ -36,10 +36,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Use pip cache
         id: pip-cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ env.PIP_CACHE_DIR }}
           key: tests-${{ matrix.os }}-pip-${{ matrix.python }}-${{ hashFiles('setup.py') }}
@@ -61,8 +61,18 @@ jobs:
           python -m pip install --upgrade pip setuptools
           python -m pip install -e ".[test]"
 
+      - name: Run Unit Tests
+        run: pytest tests/unit -m "not integration" -vv
+
+      # Runs without the repository's secrets (Dependabot's, forks') can't
+      # log in, so they run the unit tests only.
       - name: Run Tests
+        if: env.DIASPORA_SDK_CLIENT_ID != ''
         run: pytest tests/unit/test_apis.py -m integration -vv -s --log-cli-level=INFO
+
+      - name: Skip Integration Tests
+        if: env.DIASPORA_SDK_CLIENT_ID == ''
+        run: echo "::notice::No secrets in this run, so the integration tests were skipped."
 
       - name: Check the kafka-python extra
         run: |

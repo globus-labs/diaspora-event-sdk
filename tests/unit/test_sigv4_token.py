@@ -28,7 +28,7 @@ class TestSigV4TokenStructure:
         )
 
     def test_token_is_valid_base64(self, set_fake_aws_creds):
-        token, expiry_ms = generate_auth_token("us-east-1")
+        token, _ = generate_auth_token("us-east-1")
         # Re-add padding and decode
         padded = token + "=" * (4 - len(token) % 4)
         decoded = base64.urlsafe_b64decode(padded).decode("utf-8")

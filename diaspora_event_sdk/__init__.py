@@ -14,10 +14,10 @@ from diaspora_event_sdk.sdk.kafka_client import (
 )
 
 __all__ = (
-    "Client",
-    "KafkaProducer",
-    "KafkaConsumer",
     "DEFAULT_CLIENT_ID",
+    "Client",
+    "KafkaConsumer",
+    "KafkaProducer",
     "get_globus_app",
     "reliable_client_creation",
 )
