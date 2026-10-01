@@ -63,3 +63,8 @@ jobs:
 
       - name: Run Tests
         run: pytest tests/unit/test_apis.py -m integration -vv -s --log-cli-level=INFO
+
+      - name: Check the kafka-python extra
+        run: |
+          python -m pip install -e ".[kafka-python]"
+          python -c "from diaspora_event_sdk.sdk.kafka_client import kafka_available, kafka_import_error; assert kafka_available, kafka_import_error"
