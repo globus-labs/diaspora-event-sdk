@@ -24,6 +24,14 @@ jobs:
         with:
           python-version: '3.11'  # Specify the Python version you need
 
+      - name: Check that the tag names the package's version
+        run: |
+          version=$(python -c "import re; print(re.search(r'__version__ = \"([^\"]*)\"', open('diaspora_event_sdk/version.py').read()).group(1))")
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match version.py's ${version}; tag v${version} instead."
+            exit 1
+          fi
+
       - name: Install build tools
         run: |
           python -m pip install --upgrade pip

@@ -23,9 +23,22 @@ try:
         KafkaTimeoutError,
         TopicAuthorizationFailedError,
     )
-    from kafka.sasl.oauth import (
-        AbstractTokenProvider,  # type: ignore[import,import-not-found]
-    )
+
+    try:  # kafka-python 3 keeps the SASL mechanisms in kafka.net.sasl
+        from kafka.net.sasl.oauth import (  # type: ignore[import,import-not-found]
+            AbstractTokenProvider,
+        )
+    except ModuleNotFoundError:  # kafka-python 2
+        from kafka.sasl.oauth import (  # type: ignore[import,import-not-found,no-redef]
+            AbstractTokenProvider,
+        )
+
+    try:  # kafka-python 3 warns about a serializer that is a plain function
+        from kafka.serializer import (  # type: ignore[import,import-not-found]
+            SerializeWrapper,
+        )
+    except ImportError:  # kafka-python 2 takes the function as it is
+        SerializeWrapper = None
 
     class MSKTokenProvider(AbstractTokenProvider):
         def token(self):
@@ -39,6 +52,10 @@ except Exception as e:  # noqa: BLE001
     # Fallback if kafka-python is not available
     TopicAuthorizationFailedError = Exception
     KafkaTimeoutError = Exception
+
+
+def _json_serializer(value: Any) -> bytes:
+    return json.dumps(value).encode("utf-8")
 
 
 def get_diaspora_config(
@@ -85,10 +102,12 @@ if kafka_available:
                 raise ValueError("KafkaProducer requires at least one topic")
             self.topics = topics
 
-            configs.setdefault(
-                "value_serializer",
-                lambda v: json.dumps(v).encode("utf-8"),
-            )
+            if "value_serializer" not in configs:
+                configs["value_serializer"] = (
+                    _json_serializer
+                    if SerializeWrapper is None
+                    else SerializeWrapper(_json_serializer)
+                )
 
             super().__init__(**get_diaspora_config(configs))
             # Note: We do NOT block on metadata here
@@ -107,7 +126,7 @@ else:
 
     def _kafka_unavailable(name: str) -> None:
         # kafka-python not installed: warn, as before. Installed but
-        # incompatible (e.g. 3.x, which renamed kafka.sasl): raise.
+        # incompatible (e.g. a version outside the supported range): raise.
         error = kafka_import_error
         if isinstance(error, ModuleNotFoundError) and error.name == "kafka":
             warnings.warn(
@@ -116,8 +135,8 @@ else:
             )
             return
         raise ImportError(
-            f"{name} needs kafka-python>=2.1,<3: {error!r}. "
-            'Install it with: pip install "kafka-python>=2.1,<3"'
+            f"{name} needs kafka-python>=2.1,<4: {error!r}. "
+            'Install it with: pip install "kafka-python>=2.1,<4"'
         ) from error
 
     # Create dummy classes that warn, or raise, when instantiated

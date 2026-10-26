@@ -11,23 +11,32 @@ on:
 
 jobs:
   tests:
-    name: tests (${{ matrix.os }}, ${{ matrix.python }})
+    name: tests (${{ matrix.os }}, ${{ matrix.python }}, kafka-python ${{ matrix.kafka-python }})
     timeout-minutes: 10
 
+    # Every Python runs the latest kafka-python; 3.10 also runs the last 2.x.
     strategy:
       max-parallel: 1
       matrix:
         include:
         - os: ubuntu-latest
           python: '3.10'
+          kafka-python: '2.3.2'
+        - os: ubuntu-latest
+          python: '3.10'
+          kafka-python: '3.0.11'
         - os: ubuntu-latest
           python: '3.11'
+          kafka-python: '3.0.11'
         - os: ubuntu-latest
           python: '3.12'
+          kafka-python: '3.0.11'
         - os: ubuntu-latest
           python: '3.13'
+          kafka-python: '3.0.11'
         - os: ubuntu-latest
           python: '3.14'
+          kafka-python: '3.0.11'
     runs-on: ${{ matrix.os }}
 
     env:
@@ -59,7 +68,7 @@ jobs:
       - name: Install Packages
         run: |
           python -m pip install --upgrade pip setuptools
-          python -m pip install -e ".[test]"
+          python -m pip install -e ".[test,kafka-python]" "kafka-python==${{ matrix.kafka-python }}"
 
       - name: Run Unit Tests
         run: pytest tests/unit -m "not integration" -vv
@@ -76,5 +85,5 @@ jobs:
 
       - name: Check the kafka-python extra
         run: |
-          python -m pip install -e ".[kafka-python]"
+          python -c "import kafka; assert kafka.__version__ == '${{ matrix.kafka-python }}', kafka.__version__"
           python -c "from diaspora_event_sdk.sdk.kafka_client import kafka_available, kafka_import_error; assert kafka_available, kafka_import_error"

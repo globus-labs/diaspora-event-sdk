@@ -12,6 +12,7 @@ TEST_REQUIRES = [
     "tox",
     "check-manifest",
     "pre-commit",
+    "responses",
 ]
 
 
@@ -39,7 +40,7 @@ setup(
     description="Diaspora Event Fabric SDK",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_namespace_packages(),
+    packages=find_namespace_packages(include=["diaspora_event_sdk*"]),
     include_package_data=True,
     package_data={"diaspora_event_sdk": ["py.typed"]},
     python_requires=">=3.10",
@@ -49,7 +50,7 @@ setup(
         "globus-sdk>=4.4.0,<5",
     ],
     extras_require={
-        "kafka-python": ["kafka-python>=2.1,<3"],
+        "kafka-python": ["kafka-python>=2.1,<4"],
         "test": TEST_REQUIRES,
     },
     classifiers=[
@@ -61,5 +62,6 @@ setup(
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
+        "Programming Language :: Python :: 3.14",
     ],
 )
