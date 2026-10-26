@@ -14,7 +14,7 @@
 pip install "diaspora-event-sdk[kafka-python]"
 ```
 
-The `kafka-python` extra installs kafka-python, which the SDK's `KafkaProducer` and `KafkaConsumer` need. It accepts `kafka-python>=2.1,<3`: release 2.1 or a later 2.x. With kafka-python 3 installed, `KafkaProducer` and `KafkaConsumer` raise `ImportError`. kafka-python 3.0.11 does not apply `allow_auto_create_topics=False`, skips a consumer's auto-commit on `unsubscribe()`, and leaves a producer using a full CPU core once a topic it wrote to is deleted.
+The `kafka-python` extra installs kafka-python, which the SDK's `KafkaProducer` and `KafkaConsumer` need. It accepts `kafka-python>=2.1,<3`: release 2.1 or a later 2.x. With kafka-python 3 installed, the SDK still imports, and `KafkaProducer`, `KafkaConsumer` and `reliable_client_creation` raise `ImportError` when called. kafka-python 3 (checked on 3.0.11) does not apply `allow_auto_create_topics=False`, skips a consumer's auto-commit on `unsubscribe()`, and leaves a producer using a full CPU core once a topic it wrote to is deleted.
 
 To use only the web service, including producing and consuming over REST, install the SDK without the extra:
 

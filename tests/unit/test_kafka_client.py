@@ -97,3 +97,17 @@ def test_kafka_python_3_is_refused_naming_the_supported_range(tmp_path):
     for line in out:
         assert "kafka-python>=2.1,<3" in line
         assert "kafka-python 3.0.11 is not supported" in line
+
+
+def test_client_creation_without_kafka_python_deletes_nothing():
+    from diaspora_event_sdk.sdk import kafka_client
+
+    error = ImportError("kafka-python 3.0.11 is not supported")
+    with (
+        mock.patch.object(kafka_client, "kafka_available", False),
+        mock.patch.object(kafka_client, "kafka_import_error", error),
+        mock.patch.object(kafka_client, "Client") as client,
+        pytest.raises(ImportError, match=r"kafka-python>=2\.1,<3"),
+    ):
+        kafka_client.reliable_client_creation()
+    client.assert_not_called()

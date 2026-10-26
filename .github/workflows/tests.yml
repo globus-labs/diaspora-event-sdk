@@ -14,7 +14,7 @@ jobs:
     name: tests (${{ matrix.os }}, ${{ matrix.python }}, kafka-python ${{ matrix.kafka-python }})
     timeout-minutes: 10
 
-    # Every Python runs the latest kafka-python 2.x; 3.10 runs 2.3.2, the web service's.
+    # 3.11 to 3.14 run the latest kafka-python 2.x; 3.10 runs 2.3.2, the web service's.
     strategy:
       max-parallel: 1
       matrix:

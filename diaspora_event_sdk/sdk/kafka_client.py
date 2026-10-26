@@ -18,12 +18,12 @@ try:
     import os
 
     import kafka  # type: ignore[import,import-not-found]
-    from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
-    from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
 
     if not kafka.__version__.startswith("2."):
         raise ImportError(f"kafka-python {kafka.__version__} is not supported")
 
+    from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
+    from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
     from kafka.errors import (  # type: ignore[import,import-not-found]
         KafkaTimeoutError,
         TopicAuthorizationFailedError,
@@ -144,6 +144,13 @@ def reliable_client_creation() -> str:
     Returns:
         str: The full topic name in format "namespace.topic-name"
     """
+    # Without a usable kafka-python every attempt fails, and each failed
+    # attempt deletes the user
+    if not kafka_available:
+        raise ImportError(
+            "reliable_client_creation needs kafka-python>=2.1,<3: "
+            f"{kafka_import_error!r}"
+        ) from kafka_import_error
     attempt = 0
     while True:
         attempt += 1
