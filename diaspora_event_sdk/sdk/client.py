@@ -173,9 +173,13 @@ class Client:
 
     def create_key(self):
         """
-        Create a new access key for the current user (POST /api/v3/key).
-        This will replace any existing access key (force refresh).
-        Returns status, message, access_key, secret_key, and create_date.
+        Get the current user's access key, creating it if needed (POST /api/v3/key).
+        If the service holds a key for the user, it returns that key with
+        fresh False and creates nothing; otherwise it creates the user if
+        needed and a new key, returned with fresh True. To replace a key,
+        call delete_key first.
+        Returns status, message, access_key, secret_key, create_date,
+        endpoint and fresh.
         """
         resp = self.web_client.create_key(self.subject_openid)
         return resp.data if hasattr(resp, "data") else resp
