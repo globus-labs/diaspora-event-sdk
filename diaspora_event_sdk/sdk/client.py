@@ -241,10 +241,11 @@ class Client:
         record, so no Kafka client or access key is needed. The record
         needs a key or a value. The namespace defaults to the client's own.
 
-        A value is sent as the SDK's KafkaProducer writes it: bytes as
-        BINARY, and anything else, a str included, as JSON. So
-        produce(topic, "done") writes the JSON string "done", which
-        json.loads reads back. A key of bytes is sent as BINARY, a str as
+        A value of bytes is sent as BINARY, and anything else, a str
+        included, as JSON, which json.loads reads back the same as the SDK's
+        KafkaProducer output: produce(topic, "done") writes the JSON string
+        "done". The service writes compact JSON, without the spaces that
+        KafkaProducer's default serializer adds. A key of bytes is sent as BINARY, a str as
         STRING (plain text), and anything else as JSON. value_type and
         key_type ("BINARY", "JSON" or "STRING") choose the type instead.
         A json REST consumer returns a key or value that is one JSON value
