@@ -9,7 +9,7 @@ from datetime import datetime
 import globus_sdk
 
 from ._environments import get_web_service_url
-from ._rest_records import HeadersT, encode_record
+from ._rest_records import DataTypeT, HeadersT, encode_record
 from .auth.globus_app import get_globus_app
 
 logger = logging.getLogger(__name__)
@@ -230,24 +230,39 @@ class Client:
         key: t.Any = None,
         headers: HeadersT | None = None,
         timestamp: datetime | str | None = None,
+        value_type: DataTypeT | None = None,
+        key_type: DataTypeT | None = None,
         namespace: str | None = None,
     ) -> dict[str, t.Any]:
         """
         Produce one record over REST (POST /api/v3/{namespace}/topics/{topic}/records).
 
         The service replies once every in-sync replica has acknowledged the
-        record, so no Kafka client or access key is needed. A key or value
-        of bytes is sent as BINARY, a str as STRING, and any other value as
-        JSON; the record needs a key or a value. Headers are a mapping or a
-        list of (name, value) pairs, each value bytes, str or None. A
-        timestamp is a datetime with a UTC offset, or an ISO-8601 string.
-        The namespace defaults to the client's own.
+        record, so no Kafka client or access key is needed. The record
+        needs a key or a value. The namespace defaults to the client's own.
 
-        Returns topic_name, partition_id, offset and timestamp. A failed
-        write that may have reached the cluster is retried, so a record can
-        be written twice.
+        A value is sent as the SDK's KafkaProducer writes it: bytes as
+        BINARY, and anything else, a str included, as JSON. So
+        produce(topic, "done") writes the JSON string "done", which
+        json.loads reads back. A key of bytes is sent as BINARY, a str as
+        STRING (plain text), and anything else as JSON. value_type and
+        key_type ("BINARY", "JSON" or "STRING") choose the type instead.
+        A json REST consumer returns a key or value that is one JSON value
+        as that value, so a STRING key "42" comes back as the number 42.
+
+        Headers are a mapping or a list of (name, value) pairs, each value
+        bytes, str (sent as UTF-8) or None. A timestamp is a datetime with
+        a UTC offset, or an ISO-8601 string.
+
+        The request is retried only on 429 and 503, which the service
+        answers before it sends the record, and on a network error that
+        came before a connection was made. Any other error raises, since the
+        record may have been written. Returns topic_name, partition_id,
+        offset and timestamp.
         """
-        record = encode_record(value, key, headers, timestamp)
+        record = encode_record(
+            value, key, headers, timestamp, value_type=value_type, key_type=key_type
+        )
         resp = self.web_client.produce_record(
             self.subject_openid, namespace or self.namespace, topic, record
         )
@@ -264,10 +279,11 @@ class Client:
         Produce up to 500 records over REST (POST /api/v3/{namespace}/topics/{topic}/records:batch).
 
         Each record is a mapping of the arguments of produce(): value, key,
-        headers and timestamp, each optional, and an optional id of 1 to 80
-        letters, digits, dashes or underscores, distinct in the batch. An
-        entry without an id takes its index in the batch. The namespace
-        defaults to the client's own.
+        headers, timestamp, value_type and key_type, each optional, and an
+        optional id of 1 to 80 letters, digits, dashes or underscores. An
+        entry without an id takes its index in the batch. Ids must be
+        distinct, the index ids included. The namespace defaults to the
+        client's own. Retries are as for produce().
 
         Returns successes and failures, a list each: the service writes
         each entry or fails it on its own. A success has the entry's id,
@@ -275,9 +291,13 @@ class Client:
         id, error_code and message.
         """
         entries = []
+        seen: set[str] = set()
         for index, record in enumerate(records):
             fields = dict(record)
             entry_id = str(fields.pop("id", index))
+            if entry_id in seen:
+                raise ValueError(f"two records of the batch have the id {entry_id!r}")
+            seen.add(entry_id)
             entries.append({"id": entry_id, **encode_record(**fields)})
         resp = self.web_client.produce_records_batch(
             self.subject_openid, namespace or self.namespace, topic, entries
