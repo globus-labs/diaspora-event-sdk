@@ -50,7 +50,7 @@ setup(
         "globus-sdk>=4.4.0,<5",
     ],
     extras_require={
-        "kafka-python": ["kafka-python>=2.1,<3"],
+        "kafka-python": ["kafka-python>=2.1,<4"],
         "test": TEST_REQUIRES,
     },
     classifiers=[
