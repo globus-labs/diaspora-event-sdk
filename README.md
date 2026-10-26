@@ -14,18 +14,7 @@
 pip install "diaspora-event-sdk[kafka-python]"
 ```
 
-The `kafka-python` extra installs kafka-python, which the SDK's `KafkaProducer` and `KafkaConsumer` need. It accepts `kafka-python>=2.1,<4`: release 2.1 or a later 2.x, or any 3.x.
-
-### Moving to kafka-python 3
-
-A new install of the extra gets kafka-python 3, which changes these defaults and names; the SDK keeps kafka-python's defaults:
-
-- `KafkaProducer` waits for every in-sync replica (`acks` defaults to -1, `'all'`, where 2.x used 1) and is idempotent (`enable_idempotence` defaults to True). Every topic has 2 replicas and the cluster's `min.insync.replicas` is 2, so while a broker restarts the cluster refuses writes, and a send fails once its `delivery_timeout_ms` (120 s by default) has passed.
-- `kafka.errors.KafkaError` subclasses `Exception`, not `RuntimeError`, so `except RuntimeError` no longer catches it.
-- `kafka.errors.NoBrokersAvailable` is gone.
-- A `key_serializer`, `value_serializer`, `key_deserializer` or `value_deserializer` that is a plain function makes kafka-python emit a `DeprecationWarning` (it still works); kafka-python 3 takes a `kafka.serializer.Serializer` or `Deserializer`.
-
-To keep 2.x's producer behaviour under kafka-python 3, pass `acks=1, enable_idempotence=False` to `KafkaProducer`, or pin `kafka-python<3`.
+The `kafka-python` extra installs kafka-python, which the SDK's `KafkaProducer` and `KafkaConsumer` need. It accepts `kafka-python>=2.1,<3`: release 2.1 or a later 2.x. With kafka-python 3 installed, the SDK still imports, and `KafkaProducer`, `KafkaConsumer` and `reliable_client_creation` raise `ImportError` when called. kafka-python 3 (checked on 3.0.11) does not apply `allow_auto_create_topics=False`, skips a consumer's auto-commit on `unsubscribe()`, and leaves a producer using a full CPU core once a topic it wrote to is deleted.
 
 To use only the web service, including producing and consuming over REST, install the SDK without the extra:
 

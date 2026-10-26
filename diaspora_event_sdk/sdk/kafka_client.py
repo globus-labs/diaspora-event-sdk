@@ -17,28 +17,20 @@ kafka_import_error: Exception | None = None
 try:
     import os
 
+    import kafka  # type: ignore[import,import-not-found]
+
+    if not kafka.__version__.startswith("2."):
+        raise ImportError(f"kafka-python {kafka.__version__} is not supported")
+
     from kafka import KafkaConsumer as KCons  # type: ignore[import,import-not-found]
     from kafka import KafkaProducer as KProd  # type: ignore[import,import-not-found]
     from kafka.errors import (  # type: ignore[import,import-not-found]
         KafkaTimeoutError,
         TopicAuthorizationFailedError,
     )
-
-    try:  # kafka-python 3 keeps the SASL mechanisms in kafka.net.sasl
-        from kafka.net.sasl.oauth import (  # type: ignore[import,import-not-found]
-            AbstractTokenProvider,
-        )
-    except ModuleNotFoundError:  # kafka-python 2
-        from kafka.sasl.oauth import (  # type: ignore[import,import-not-found,no-redef]
-            AbstractTokenProvider,
-        )
-
-    try:  # kafka-python 3 warns about a serializer that is a plain function
-        from kafka.serializer import (  # type: ignore[import,import-not-found]
-            SerializeWrapper,
-        )
-    except ImportError:  # kafka-python 2 takes the function as it is
-        SerializeWrapper = None
+    from kafka.sasl.oauth import (  # type: ignore[import,import-not-found]
+        AbstractTokenProvider,
+    )
 
     class MSKTokenProvider(AbstractTokenProvider):
         def token(self):
@@ -103,11 +95,7 @@ if kafka_available:
             self.topics = topics
 
             if "value_serializer" not in configs:
-                configs["value_serializer"] = (
-                    _json_serializer
-                    if SerializeWrapper is None
-                    else SerializeWrapper(_json_serializer)
-                )
+                configs["value_serializer"] = _json_serializer
 
             super().__init__(**get_diaspora_config(configs))
             # Note: We do NOT block on metadata here
@@ -135,8 +123,8 @@ else:
             )
             return
         raise ImportError(
-            f"{name} needs kafka-python>=2.1,<4: {error!r}. "
-            'Install it with: pip install "kafka-python>=2.1,<4"'
+            f"{name} needs kafka-python>=2.1,<3: {error!r}. "
+            'Install it with: pip install "kafka-python>=2.1,<3"'
         ) from error
 
     # Create dummy classes that warn, or raise, when instantiated
@@ -156,6 +144,13 @@ def reliable_client_creation() -> str:
     Returns:
         str: The full topic name in format "namespace.topic-name"
     """
+    # Without a usable kafka-python every attempt fails, and each failed
+    # attempt deletes the user
+    if not kafka_available:
+        raise ImportError(
+            "reliable_client_creation needs kafka-python>=2.1,<3: "
+            f"{kafka_import_error!r}"
+        ) from kafka_import_error
     attempt = 0
     while True:
         attempt += 1
