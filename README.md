@@ -14,16 +14,43 @@
 pip install "diaspora-event-sdk[kafka-python]"
 ```
 
-For web service only including consumer RESTful API:
+The `kafka-python` extra installs kafka-python, which the SDK's `KafkaProducer` and `KafkaConsumer` need. It accepts `kafka-python>=2.1,<4`: release 2.1 or a later 2.x, or any 3.x. Under kafka-python 3, `KafkaProducer` is idempotent by default.
+
+To use only the web service, including producing and consuming over REST, install the SDK without the extra:
 
 ```bash
 pip install diaspora-event-sdk
 ```
 
+## Produce and consume over REST
+
+The web service produces and consumes records over HTTPS with your Globus login, so a client needs no Kafka client and no access key. `Client.produce` and `Client.produce_batch` send records to the produce routes, which take the request bodies of Confluent's REST API v3. `RESTConsumer` wraps the consumer routes, which take the paths and bodies of Confluent REST Proxy v2 under `/api/v2/consumers`. Name topics and consumer groups without your namespace (`Client().namespace`): the service adds it, so the group `my-group` is the Kafka consumer group `<namespace>.my-group`.
+
+```python
+from diaspora_event_sdk import Client, RESTConsumer
+
+c = Client()
+c.create_topic("my-topic")
+c.produce("my-topic", {"step": 1, "loss": 0.52}, key="job-42")
+c.produce_batch("my-topic", [{"value": {"step": 2}}, {"value": "done"}])
+
+with RESTConsumer("my-group", client=c, format="json", auto_offset_reset="earliest") as consumer:
+    consumer.subscribe(["my-topic"])
+    for record in consumer.fetch(timeout_ms=5000):
+        print(record["offset"], record["key"], record["value"])
+    consumer.commit()
+```
+
+`Client.produce` sends a key or value of bytes as `BINARY`, a `str` as `STRING`, and any other value as `JSON`. Each record of `Client.produce_batch` is a dict of the same arguments (`value`, `key`, `headers` and `timestamp`) with an optional `id`. A consumer's `format` is `binary`, the default, or `json`. A `binary` consumer returns keys, values and header values as bytes; a `json` consumer returns JSON keys and values as Python values and text as `str`.
+
+The service drops consumer instances when it is deployed or restarted, and closes an instance idle for 5 minutes. `RESTConsumer` then creates the instance again with the same name and settings, subscribes or assigns as before, and retries the request once. The new instance starts from the group's committed offsets, so records fetched since the last commit can be fetched again.
+
+`RESTConsumer` needs version 0.7.0 or later of the web service. The [service's API reference](https://github.com/haochenpan/diaspora-service/blob/main/docs/web/api.md) gives every route, limit and error code.
+
 ## Examples
 
 - **[DiasporaDemo.ipynb](diaspora_event_sdk/examples/DiasporaDemo.ipynb)** — Authentication, user/key/topic management, and Kafka produce/consume
-- **[ConsumerRESTDemo.ipynb](diaspora_event_sdk/examples/ConsumerRESTDemo.ipynb)** — Consumer REST API walkthrough (Confluent Kafka REST Proxy v2 compatible)
+- **[ConsumerRESTDemo.ipynb](diaspora_event_sdk/examples/ConsumerRESTDemo.ipynb)** — Produce and consume over REST, first with raw HTTP requests and then with the SDK
 
 ## Acknowledgment
 
