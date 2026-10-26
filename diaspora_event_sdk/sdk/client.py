@@ -106,6 +106,11 @@ class Client:
         from .auth.client_login import get_client_creds
 
         client_id, client_secret = get_client_creds()
+        if not (client_id and client_secret):
+            raise ValueError(
+                "A client identity needs both DIASPORA_SDK_CLIENT_ID and "
+                "DIASPORA_SDK_CLIENT_SECRET to be set."
+            )
         confidential_client = globus_sdk.ConfidentialAppAuthClient(
             client_id=client_id, client_secret=client_secret
         )
