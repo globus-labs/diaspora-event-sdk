@@ -305,6 +305,8 @@ class RESTConsumer:
                 self._fetched_on = None
                 raise CommitLostError(self._gone_reply)
             self._request("POST", "/offsets", commit="positions")
+            # The records fetched so far are committed.
+            self._fetched_on = None
         else:
             self._request(
                 "POST",

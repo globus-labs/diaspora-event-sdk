@@ -750,6 +750,23 @@ def test_commit_after_recovery_with_nothing_fetched_is_sent(client, http):
     assert routes(http)[-1] == ("POST", f"{INSTANCE}/offsets")
 
 
+def test_commit_after_a_commit_and_a_recovery_is_sent(client, http):
+    # The fetched records were committed before the instance was dropped,
+    # so a commit after another call created it again loses nothing.
+    consumer = subscribed_consumer(client, http)
+    http.get(f"{INSTANCE}/records", json=[record(5)], content_type=V2)
+    consumer.fetch()
+    http.post(f"{INSTANCE}/offsets", json=[], content_type=V2)
+    consumer.commit()
+    gone(http, "GET", f"{INSTANCE}/assignments")
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    http.get(f"{INSTANCE}/assignments", json={"partitions": []}, content_type=V2)
+    consumer.assignment()
+    consumer.commit()
+    assert routes(http)[-1] == ("POST", f"{INSTANCE}/offsets")
+
+
 def test_commit_with_offsets_on_a_new_subscribed_instance_raises(client, http):
     # A new subscribed instance has no partitions until its first fetch, so
     # the retried commit is refused with 40903.
