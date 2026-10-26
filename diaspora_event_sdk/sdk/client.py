@@ -3,10 +3,13 @@ from __future__ import annotations
 import logging
 import os
 import typing as t
+from collections.abc import Iterable, Mapping
+from datetime import datetime
 
 import globus_sdk
 
 from ._environments import get_web_service_url
+from ._rest_records import HeadersT, encode_record
 from .auth.globus_app import get_globus_app
 
 logger = logging.getLogger(__name__)
@@ -213,3 +216,65 @@ class Client:
             self.subject_openid, self.namespace, topic
         )
         return resp.data if hasattr(resp, "data") else resp
+
+    def produce(
+        self,
+        topic: str,
+        value: t.Any = None,
+        *,
+        key: t.Any = None,
+        headers: HeadersT | None = None,
+        timestamp: datetime | str | None = None,
+        namespace: str | None = None,
+    ) -> dict[str, t.Any]:
+        """
+        Produce one record over REST (POST /api/v3/{namespace}/topics/{topic}/records).
+
+        The service replies once every in-sync replica has acknowledged the
+        record, so no Kafka client or access key is needed. A key or value
+        of bytes is sent as BINARY, a str as STRING, and any other value as
+        JSON; the record needs a key or a value. Headers are a mapping or a
+        list of (name, value) pairs, each value bytes, str or None. A
+        timestamp is a datetime with a UTC offset, or an ISO-8601 string.
+        The namespace defaults to the client's own.
+
+        Returns topic_name, partition_id, offset and timestamp. A failed
+        write that may have reached the cluster is retried, so a record can
+        be written twice.
+        """
+        record = encode_record(value, key, headers, timestamp)
+        resp = self.web_client.produce_record(
+            self.subject_openid, namespace or self.namespace, topic, record
+        )
+        return resp.data
+
+    def produce_batch(
+        self,
+        topic: str,
+        records: Iterable[Mapping[str, t.Any]],
+        *,
+        namespace: str | None = None,
+    ) -> dict[str, t.Any]:
+        """
+        Produce up to 500 records over REST (POST /api/v3/{namespace}/topics/{topic}/records:batch).
+
+        Each record is a mapping of the arguments of produce(): value, key,
+        headers and timestamp, each optional, and an optional id of 1 to 80
+        letters, digits, dashes or underscores, distinct in the batch. An
+        entry without an id takes its index in the batch. The namespace
+        defaults to the client's own.
+
+        Returns successes and failures, a list each: the service writes
+        each entry or fails it on its own. A success has the entry's id,
+        topic_name, partition_id, offset and timestamp; a failure has the
+        id, error_code and message.
+        """
+        entries = []
+        for index, record in enumerate(records):
+            fields = dict(record)
+            entry_id = str(fields.pop("id", index))
+            entries.append({"id": entry_id, **encode_record(**fields)})
+        resp = self.web_client.produce_records_batch(
+            self.subject_openid, namespace or self.namespace, topic, entries
+        )
+        return resp.data

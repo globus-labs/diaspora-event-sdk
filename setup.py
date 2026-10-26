@@ -12,6 +12,7 @@ TEST_REQUIRES = [
     "tox",
     "check-manifest",
     "pre-commit",
+    "responses",
 ]
 
 

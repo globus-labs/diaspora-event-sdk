@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import typing as t
+import urllib.parse
 
 import globus_sdk
 from globus_sdk import Scope
@@ -16,8 +18,24 @@ DIASPORA_SCOPE = os.getenv(
 )
 
 
+class WebAPIError(globus_sdk.GlobusAPIError):
+    """An error reply from the web service.
+
+    The produce and consumer routes answer errors as Confluent's REST API
+    does, with a JSON body of an ``error_code`` and a ``message``.
+    """
+
+    @property
+    def error_code(self) -> int | None:
+        """The reply's ``error_code``, such as 40403, or None if it has none."""
+        data = self.raw_json
+        code = data.get("error_code") if isinstance(data, dict) else None
+        return code if isinstance(code, int) else None
+
+
 class WebClient(globus_sdk.BaseClient):
     resource_server = DIASPORA_RESOURCE_SERVER
+    error_class = WebAPIError
 
     @property
     def default_scope_requirements(self) -> list[Scope]:
@@ -79,3 +97,45 @@ class WebClient(globus_sdk.BaseClient):
             f"/api/v3/{namespace}/{topic}/recreate",
             headers={"Subject": str(subject)},
         )
+
+    def produce_record(
+        self,
+        subject: UUID_LIKE_T,
+        namespace: str,
+        topic: str,
+        record: dict[str, t.Any],
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """Produce one record (POST /api/v3/{namespace}/topics/{topic}/records).
+
+        The record is in the body form of Confluent's REST API v3.
+        """
+        return self.post(
+            self._topic_url(namespace, topic, "records"),
+            data=record,
+            headers={"Subject": str(subject)},
+        )
+
+    def produce_records_batch(
+        self,
+        subject: UUID_LIKE_T,
+        namespace: str,
+        topic: str,
+        entries: list[dict[str, t.Any]],
+    ) -> globus_sdk.GlobusHTTPResponse:
+        """Produce a batch of records (POST .../topics/{topic}/records:batch).
+
+        Each entry is a record in the body form of Confluent's REST API v3,
+        with an ``id``. The service answers 207 with each entry's outcome.
+        """
+        return self.post(
+            self._topic_url(namespace, topic, "records:batch"),
+            data={"entries": entries},
+            headers={"Subject": str(subject)},
+        )
+
+    def _topic_url(self, namespace: str, topic: str, route: str) -> str:
+        # globus-sdk percent-encodes a relative path, colons included, so
+        # "records:batch" would be sent as "records%3Abatch". An absolute
+        # URL is sent as given, so the names are quoted here instead.
+        ns, tp = (urllib.parse.quote(part, safe="") for part in (namespace, topic))
+        return f"{self.base_url.rstrip('/')}/api/v3/{ns}/topics/{tp}/{route}"

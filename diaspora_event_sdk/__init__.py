@@ -12,12 +12,16 @@ from diaspora_event_sdk.sdk.kafka_client import (
     KafkaProducer,
     reliable_client_creation,
 )
+from diaspora_event_sdk.sdk.rest_consumer import RESTConsumer
+from diaspora_event_sdk.sdk.web_client import WebAPIError
 
 __all__ = (
     "DEFAULT_CLIENT_ID",
     "Client",
     "KafkaConsumer",
     "KafkaProducer",
+    "RESTConsumer",
+    "WebAPIError",
     "get_globus_app",
     "reliable_client_creation",
 )
