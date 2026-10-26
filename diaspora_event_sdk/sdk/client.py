@@ -174,10 +174,11 @@ class Client:
     def create_key(self):
         """
         Get the current user's access key, creating it if needed (POST /api/v3/key).
-        If the service holds a key for the user, it returns that key with
-        fresh False and creates nothing; otherwise it creates the user if
-        needed and a new key, returned with fresh True. To replace a key,
-        call delete_key first.
+        If the service holds a key for the user that is still active in IAM,
+        it returns that key with fresh False and creates nothing; otherwise,
+        as when the key was deleted or deactivated in IAM, it creates the
+        user if needed and a new key, returned with fresh True. To replace a
+        key, call delete_key first.
         Returns status, message, access_key, secret_key, create_date,
         endpoint and fresh.
         """
