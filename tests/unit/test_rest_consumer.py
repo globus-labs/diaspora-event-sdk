@@ -134,9 +134,52 @@ def test_requests_go_to_base_uri(client, http):
 )
 def test_base_uri_of_another_origin_is_refused(client, http, uri):
     created(http, base_uri=uri)
+    http.delete(INSTANCE, status=204)
     with pytest.raises(ValueError, match="no other host"):
         RESTConsumer("g1", client=client)
-    assert len(http.calls) == 1  # nothing was sent to the other origin
+    # the instance is deleted through the client's own base URL, and
+    # nothing is sent to the other origin
+    assert routes(http) == [("POST", CREATE_URL), ("DELETE", INSTANCE)]
+
+
+def test_a_failed_delete_of_a_refused_instance_still_raises(client, http):
+    created(http, base_uri="https://elsewhere.example/api/v2/consumers/g1/x")
+    refused(http, "DELETE", INSTANCE, 403, 40301)
+    with pytest.raises(ValueError, match="no other host"):
+        RESTConsumer("g1", client=client)
+    assert routes(http)[-1] == ("DELETE", INSTANCE)
+
+
+@pytest.mark.parametrize(
+    ("base", "uri"),
+    [
+        (f"{BASE}/", f"{BASE}:443/api/v2/consumers/g1/instances/inst"),
+        ("https://Octopus.Example/", INSTANCE),
+        ("https://octopus.example:443/", INSTANCE),
+        ("https://octopus.example", INSTANCE),
+        (
+            "http://localhost:8000",
+            "http://LOCALHOST:8000/api/v2/consumers/g1/instances/inst",
+        ),
+        ("http://localhost", "http://localhost:80/api/v2/consumers/g1/instances/inst"),
+    ],
+)
+def test_base_uri_of_the_same_origin_is_accepted(base, uri):
+    with (
+        mock.patch.object(Client, "_resolve_identity"),
+        mock.patch(
+            "diaspora_event_sdk.sdk.client.get_web_service_url", return_value=base
+        ),
+    ):
+        c = Client(authorizer=globus_sdk.AccessTokenAuthorizer("token"))
+    c.subject_openid = SUBJECT
+    with responses.RequestsMock() as http:
+        http.post(
+            f"{c.web_client.base_url.rstrip('/')}/api/v2/consumers/g1",
+            json={"instance_id": "inst", "base_uri": uri},
+            content_type=V2,
+        )
+        assert RESTConsumer("g1", client=c).base_uri == uri
 
 
 def test_subscribe_takes_one_topic_name(client, http):
@@ -333,7 +376,7 @@ def test_commit_without_offsets_on_a_gone_instance_raises(client, http):
         consumer.commit()
     assert isinstance(info.value, WebAPIError)
     assert info.value.error_code == 40403
-    assert "nothing was committed" in str(info.value)
+    assert "Nothing was committed" in str(info.value)
     # recreated and subscribed again, and the commit not sent again
     assert routes(http)[3:] == [
         ("POST", CREATE_URL),
@@ -623,3 +666,107 @@ def test_close_raises_other_errors(client, http):
     with pytest.raises(WebAPIError):
         consumer.close()
     assert not consumer.closed
+
+
+def record(offset):
+    return {
+        "topic": "t1",
+        "key": None,
+        "value": b64(b"v"),
+        "partition": 0,
+        "offset": offset,
+        "headers": [],
+    }
+
+
+def subscribed_consumer(client, http):
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    consumer = RESTConsumer("g1", client=client)
+    consumer.subscribe(["t1"])
+    return consumer
+
+
+def test_commit_after_another_call_recovered_raises_without_sending(client, http):
+    # The instance is dropped while the caller processes a fetch's records,
+    # and assignment() finds it gone and creates it again. A commit of the
+    # new instance's positions would then commit nothing and answer 200 [].
+    consumer = subscribed_consumer(client, http)
+    http.get(f"{INSTANCE}/records", json=[record(5)], content_type=V2)
+    consumer.fetch()
+    gone(http, "GET", f"{INSTANCE}/assignments")
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    http.get(f"{INSTANCE}/assignments", json={"partitions": []}, content_type=V2)
+    consumer.assignment()
+    sent = len(http.calls)
+    with pytest.raises(CommitLostError) as info:
+        consumer.commit()
+    assert len(http.calls) == sent  # nothing sent
+    assert info.value.error_code == 40403
+    # once raised, a commit is sent again, and so is one after a fetch
+    http.post(f"{INSTANCE}/offsets", json=[], content_type=V2)
+    consumer.commit()
+    http.get(f"{INSTANCE}/records", json=[record(5)], content_type=V2)
+    consumer.fetch()
+    consumer.commit()
+    assert routes(http)[sent:] == [
+        ("POST", f"{INSTANCE}/offsets"),
+        ("GET", f"{INSTANCE}/records"),
+        ("POST", f"{INSTANCE}/offsets"),
+    ]
+
+
+def test_commit_after_a_failed_recovery_raises_without_sending(client, http):
+    # A fetch finds the instance gone, creates it again, fails to subscribe
+    # it and raises. A later commit would subscribe it and then commit the
+    # new instance's empty positions.
+    consumer = subscribed_consumer(client, http)
+    http.get(f"{INSTANCE}/records", json=[record(5)], content_type=V2)
+    consumer.fetch()
+    gone(http, "GET", f"{INSTANCE}/records")
+    created(http)
+    refused(http, "POST", f"{INSTANCE}/subscription", 409, 40904)
+    with pytest.raises(WebAPIError) as info:
+        consumer.fetch()
+    assert info.value.error_code == 40904
+    sent = len(http.calls)
+    with pytest.raises(CommitLostError):
+        consumer.commit()
+    assert len(http.calls) == sent
+
+
+def test_commit_after_recovery_with_nothing_fetched_is_sent(client, http):
+    consumer = subscribed_consumer(client, http)
+    http.get(f"{INSTANCE}/records", json=[], content_type=V2)
+    consumer.fetch()
+    gone(http, "GET", f"{INSTANCE}/assignments")
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    http.get(f"{INSTANCE}/assignments", json={"partitions": []}, content_type=V2)
+    consumer.assignment()
+    http.post(f"{INSTANCE}/offsets", json=[], content_type=V2)
+    consumer.commit()
+    assert routes(http)[-1] == ("POST", f"{INSTANCE}/offsets")
+
+
+def test_commit_with_offsets_on_a_new_subscribed_instance_raises(client, http):
+    # A new subscribed instance has no partitions until its first fetch, so
+    # the retried commit is refused with 40903.
+    consumer = subscribed_consumer(client, http)
+    gone(http, "POST", f"{INSTANCE}/offsets")
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    refused(http, "POST", f"{INSTANCE}/offsets", 409, 40903)
+    with pytest.raises(CommitLostError) as info:
+        consumer.commit({("t1", 0): 41})
+    assert (info.value.http_status, info.value.error_code) == (409, 40903)
+    assert "after a fetch" in str(info.value)
+
+
+def test_a_40903_without_recovery_stays_a_web_api_error(client, http):
+    consumer = subscribed_consumer(client, http)
+    refused(http, "POST", f"{INSTANCE}/offsets", 409, 40903)
+    with pytest.raises(WebAPIError) as info:
+        consumer.commit({("t1", 0): 41})
+    assert not isinstance(info.value, CommitLostError)

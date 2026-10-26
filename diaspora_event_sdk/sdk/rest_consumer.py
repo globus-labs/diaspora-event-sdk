@@ -9,6 +9,7 @@ import urllib.parse
 from collections.abc import Iterable, Mapping
 
 import globus_sdk
+import requests
 
 from ._rest_records import decode_record
 from .client import Client
@@ -24,25 +25,38 @@ TopicPartitionT = tuple[str, int]
 
 V2_CONTENT_TYPE = "application/vnd.kafka.v2+json"
 INSTANCE_NOT_FOUND = 40403
+NOT_ASSIGNED = 40903
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 
 
 class CommitLostError(WebAPIError):
-    """A commit without offsets found its consumer instance gone.
+    """A commit that found its consumer instance created again.
 
-    The service answered 404 with error code 40403, so nothing was
-    committed. The consumer has created its instance again, and the next
-    fetch resumes at the group's last commit, so the records fetched
-    since that commit come again.
+    Nothing was committed. The service had dropped the instance (404 with
+    error code 40403) and the consumer has created it again; the next
+    fetch resumes at the group's last commit, so the records fetched since
+    that commit come again.
+
+    ``http_status`` and ``error_code`` are those of the reply the error
+    stands for: 404 and 40403, or 409 and 40903 when a commit with offsets
+    was retried on a new subscribed instance, which has no partitions until
+    its first fetch.
     """
 
     def _post_parse_hook(self) -> bool:
-        self.messages = [
-            (
-                "The consumer instance was gone (40403), so nothing was "
-                "committed. The instance has been created again; the next "
-                "fetch resumes at the group's last commit."
+        message = (
+            "Nothing was committed: the consumer instance was gone (40403) "
+            "and has been created again."
+        )
+        if self.error_code == NOT_ASSIGNED:
+            message += (
+                " The new instance gets its partitions at its first fetch, "
+                "so it refused the offsets (40903); commit them again after "
+                "a fetch."
             )
-        ]
+        else:
+            message += " The next fetch resumes at the group's last commit."
+        self.messages = [message]
         return True
 
 
@@ -87,14 +101,17 @@ class RESTConsumer:
     id in the record and drop repeats. A group that never committed starts
     where ``auto_offset_reset`` says.
 
-    Two requests are not retried as they were sent:
+    Commits and seeks are handled apart:
 
-    - ``commit()`` without offsets would commit the new instance's
-      positions, which hold nothing fetched, so it raises
-      :class:`CommitLostError` instead.
+    - ``commit()`` without offsets commits the instance's positions, and a
+      new instance's positions hold nothing fetched. If the records fetched
+      since the last commit came from an instance that is gone, whichever
+      request found it gone, ``commit()`` sends nothing and raises
+      :class:`CommitLostError`.
     - A subscribed instance gets its partitions at its first fetch, so a
-      seek or a commit with offsets retried on a new subscribed instance is
-      refused with 409 (40903) until the instance has fetched.
+      commit with offsets retried on a new subscribed instance is refused
+      with 409 (40903), and ``commit()`` raises :class:`CommitLostError`. A
+      seek retried there raises the 409 as a ``WebAPIError``.
 
     If the instance is created again but subscribing or assigning fails,
     the next request tries again before it is sent.
@@ -140,9 +157,10 @@ class RESTConsumer:
             timeout waits for records; the service's default is 5000.
         :param recover: Whether to create the instance again and retry once
             when the service answers that it is gone (40403).
-        :raises ValueError: If the service gives an instance URL whose scheme
-            or host differs from the client's base URL; the consumer sends
-            the client's token to no other host.
+        :raises ValueError: If the service gives an instance URL whose
+            scheme, host or port differs from the client's base URL; the
+            consumer sends the client's token to no other host, and deletes
+            that instance through the client's base URL.
         """
         self.group = group
         self.format = format
@@ -171,6 +189,10 @@ class RESTConsumer:
         # The instance was created again, but subscribing or assigning it
         # as before has not yet succeeded.
         self._replay_pending = False
+        # The generation of the instance the last records were fetched
+        # from, and the 40403 reply that led to the latest re-creation.
+        self._fetched_on: int | None = None
+        self._gone_reply: requests.Response | None = None
         self._closing = False
         self._closed = False
         self.name: str | None = name
@@ -257,6 +279,8 @@ class RESTConsumer:
         records = self._request(
             "GET", "/records", query_params=query, accept=accept
         ).data
+        if records:
+            self._fetched_on = self._generation
         binary = self.format == "binary"
         return [decode_record(record, binary=binary) for record in records]
 
@@ -267,15 +291,27 @@ class RESTConsumer:
             processed; the group commits the one after it. If not given,
             commits the position of each assigned partition, the record
             after the last one fetched.
-        :raises CommitLostError: If ``offsets`` is not given and the
-            instance was gone. Nothing was committed; the instance has been
-            created again, and the next fetch resumes at the group's last
-            commit.
+        :raises CommitLostError: If nothing was committed because the
+            instance was created again: ``offsets`` is not given and the
+            records fetched since the last commit came from an instance
+            that is gone, or ``offsets`` is given, the instance is
+            subscribed, and the new instance has not yet fetched. The next
+            fetch resumes at the group's last commit.
         """
         if offsets is None:
-            self._request("POST", "/offsets", positions=True)
+            if self._fetched_on is not None and self._fetched_on != self._generation:
+                # Another request found the instance gone after the fetch.
+                assert self._gone_reply is not None
+                self._fetched_on = None
+                raise CommitLostError(self._gone_reply)
+            self._request("POST", "/offsets", commit="positions")
         else:
-            self._request("POST", "/offsets", data={"offsets": _offsets(offsets)})
+            self._request(
+                "POST",
+                "/offsets",
+                data={"offsets": _offsets(offsets)},
+                commit="offsets",
+            )
 
     def committed(
         self, partitions: Iterable[TopicPartitionT]
@@ -342,10 +378,26 @@ class RESTConsumer:
             url, data=settings, headers=self._headers(), encoding="json"
         )
         base_uri = reply.data["base_uri"]
-        _check_same_origin(base_uri, self._web.base_url)
+        if not _same_origin(base_uri, self._web.base_url):
+            self._delete_instance(url, reply.data["instance_id"])
+            raise ValueError(
+                f"The service gave the instance URL {base_uri!r}, whose "
+                "scheme, host or port differs from the client's "
+                f"{self._web.base_url!r}; the consumer sends its token to no "
+                "other host."
+            )
         self.name = reply.data["instance_id"]
         self.base_uri = base_uri
         self._generation += 1
+
+    def _delete_instance(self, group_url: str, instance_id: str) -> None:
+        """Delete an instance through the client's base URL, so that it does
+        not hold one of the user's instances; log a failure."""
+        url = f"{group_url}/instances/{urllib.parse.quote(instance_id, safe='')}"
+        try:
+            self._web.delete(url, headers=self._headers())
+        except globus_sdk.GlobusError:
+            logger.warning("Failed to delete instance %s", instance_id, exc_info=True)
 
     def _repair(self, gone: int | None, *, replay: bool) -> None:
         """Create the instance again if it is still the one found gone, and
@@ -385,15 +437,15 @@ class RESTConsumer:
         query_params: dict[str, t.Any] | None = None,
         accept: str | None = None,
         replay: bool = True,
-        positions: bool = False,
+        commit: t.Literal["positions", "offsets"] | None = None,
     ) -> globus_sdk.GlobusHTTPResponse:
         """Send a request, creating the instance again if it is gone.
 
         :param replay: Whether the request needs the instance subscribed or
             assigned as before; False for a request that replaces both.
-        :param positions: Whether the request commits the instance's
-            positions, which a new instance does not have, so that it is
-            not retried.
+        :param commit: ``"positions"`` for a commit of the instance's
+            positions, which a new instance does not have, so that it is not
+            retried; ``"offsets"`` for a commit of given offsets.
         """
         if self._closed or self._closing:
             raise RuntimeError(f"{self!r} is closed")
@@ -409,12 +461,24 @@ class RESTConsumer:
                 raise
             if self._closing or self._closed:
                 raise
+            self._gone_reply = err._underlying_response
             self._repair(generation, replay=replay)
-            if positions:
+            if commit == "positions":
+                self._fetched_on = None
                 raise CommitLostError(err._underlying_response) from err
-        return self._send(
-            method, route, data=data, query_params=query_params, accept=accept
-        )
+        try:
+            return self._send(
+                method, route, data=data, query_params=query_params, accept=accept
+            )
+        except WebAPIError as err:
+            if (
+                commit == "offsets"
+                and self._topics
+                and err.http_status == 409
+                and err.error_code == NOT_ASSIGNED
+            ):
+                raise CommitLostError(err._underlying_response) from err
+            raise
 
     def _send(
         self,
@@ -444,14 +508,25 @@ class RESTConsumer:
         }
 
 
-def _check_same_origin(base_uri: str, base_url: str) -> None:
-    uri, url = urllib.parse.urlsplit(base_uri), urllib.parse.urlsplit(base_url)
-    if (uri.scheme, uri.netloc) != (url.scheme, url.netloc):
-        raise ValueError(
-            f"The service gave the instance URL {base_uri!r}, whose scheme or "
-            f"host differs from the client's {url.scheme}://{url.netloc}; the "
-            "consumer sends its token to no other host."
-        )
+def _origin(url: str) -> tuple[str, str, int] | None:
+    """Give a URL's scheme, lowercased host and port, the scheme's default
+    port if none is named; None if it has no host or a bad port."""
+    parts = urllib.parse.urlsplit(url)
+    scheme = parts.scheme.lower()
+    try:
+        port = parts.port
+    except ValueError:
+        return None
+    if port is None:
+        port = _DEFAULT_PORTS.get(scheme)
+    if not parts.hostname or port is None:
+        return None
+    return scheme, parts.hostname.lower(), port
+
+
+def _same_origin(base_uri: str, base_url: str) -> bool:
+    origin = _origin(base_uri)
+    return origin is not None and origin == _origin(base_url)
 
 
 def _instance_gone(err: WebAPIError) -> bool:
