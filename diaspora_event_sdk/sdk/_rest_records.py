@@ -66,13 +66,15 @@ def encode_record(
     return record
 
 
-def decode_binary_record(record: dict[str, t.Any]) -> dict[str, t.Any]:
-    """Decode a binary instance's record: its key, value and header values
-    become bytes, and a null one stays None."""
+def decode_record(record: dict[str, t.Any], *, binary: bool) -> dict[str, t.Any]:
+    """Decode a fetched record's header values, which are base64 in both
+    formats, into bytes, and a binary instance's key and value too. A null
+    one stays None."""
     decoded = dict(record)
-    for field in ("key", "value"):
-        if decoded.get(field) is not None:
-            decoded[field] = base64.b64decode(decoded[field])
+    if binary:
+        for field in ("key", "value"):
+            if decoded.get(field) is not None:
+                decoded[field] = base64.b64decode(decoded[field])
     if decoded.get("headers"):
         decoded["headers"] = [
             {

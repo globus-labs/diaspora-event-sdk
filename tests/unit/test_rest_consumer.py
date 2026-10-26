@@ -1,20 +1,22 @@
 import base64
 import json
+import threading
+import time
 from unittest import mock
 
 import globus_sdk
 import pytest
 import responses
 
-from diaspora_event_sdk import RESTConsumer, WebAPIError
+from diaspora_event_sdk import CommitLostError, RESTConsumer, WebAPIError
 from diaspora_event_sdk.sdk.client import Client
 
 BASE = "https://octopus.example"
 SUBJECT = "0b8fa3a4-4f4e-4a8c-9c1d-1234567890ab"
 CREATE_URL = f"{BASE}/api/v2/consumers/g1"
-# A host other than the client's: the consumer must use base_uri as given
-INSTANCE = "https://instances.example/api/v2/consumers/g1/instances/inst"
+INSTANCE = f"{BASE}/api/v2/consumers/g1/instances/inst"
 V2 = "application/vnd.kafka.v2+json"
+GONE = {"error_code": 40403, "message": "Consumer instance not found."}
 
 
 @pytest.fixture
@@ -38,26 +40,38 @@ def http():
         yield rsps
 
 
-def created(http, name="inst"):
+def created(http, name="inst", base_uri=INSTANCE):
     http.post(
         CREATE_URL,
-        json={"instance_id": name, "base_uri": INSTANCE},
+        json={"instance_id": name, "base_uri": base_uri},
         content_type=V2,
     )
 
 
 def gone(http, method, url):
+    http.add(method, url, status=404, json=GONE, content_type=V2)
+
+
+def refused(http, method, url, status, code):
     http.add(
         method,
         url,
-        status=404,
-        json={"error_code": 40403, "message": "Consumer instance not found."},
+        status=status,
+        json={"error_code": code, "message": "refused"},
         content_type=V2,
     )
 
 
 def body(call):
     return json.loads(call.request.body) if call.request.body else None
+
+
+def routes(http):
+    return [(c.request.method, c.request.url.split("?")[0]) for c in http.calls]
+
+
+def b64(data):
+    return base64.b64encode(data).decode()
 
 
 def test_create_sends_settings_and_auth(client, http):
@@ -96,15 +110,33 @@ def test_create_without_name_takes_the_service_name(client, http):
 
 
 def test_requests_go_to_base_uri(client, http):
-    created(http)
-    http.post(f"{INSTANCE}/subscription", status=204)
-    http.get(f"{INSTANCE}/subscription", json={"topics": ["t1"]}, content_type=V2)
+    # base_uri is absolute and used as given, here at a path the client
+    # would not build itself
+    uri = f"{BASE}/elsewhere/instances/inst"
+    created(http, base_uri=uri)
+    http.post(f"{uri}/subscription", status=204)
+    http.get(f"{uri}/subscription", json={"topics": ["t1"]}, content_type=V2)
     consumer = RESTConsumer("g1", client=client)
     consumer.subscribe(["t1"])
     assert consumer.subscription() == ["t1"]
     assert body(http.calls[1]) == {"topics": ["t1"]}
     assert http.calls[1].request.headers["Content-Type"] == V2
     assert http.calls[1].request.headers["Authorization"] == "Bearer token"
+
+
+@pytest.mark.parametrize(
+    "uri",
+    [
+        "http://octopus.example/api/v2/consumers/g1/instances/inst",
+        "https://elsewhere.example/api/v2/consumers/g1/instances/inst",
+        "https://octopus.example:8443/api/v2/consumers/g1/instances/inst",
+    ],
+)
+def test_base_uri_of_another_origin_is_refused(client, http, uri):
+    created(http, base_uri=uri)
+    with pytest.raises(ValueError, match="no other host"):
+        RESTConsumer("g1", client=client)
+    assert len(http.calls) == 1  # nothing was sent to the other origin
 
 
 def test_subscribe_takes_one_topic_name(client, http):
@@ -114,25 +146,33 @@ def test_subscribe_takes_one_topic_name(client, http):
     assert body(http.calls[1]) == {"topics": ["t1"]}
 
 
-def test_fetch_json_sends_accept_and_returns_records_as_given(client, http):
+def test_fetch_json_sends_accept_and_decodes_headers(client, http):
     created(http)
-    records = [
-        {
-            "topic": "t1",
-            "key": None,
-            "value": {"step": 7},
-            "partition": 0,
-            "offset": 3,
-            "headers": [{"name": "trace", "value": "AAE="}],
-        }
-    ]
     http.get(
         f"{INSTANCE}/records",
-        json=records,
+        json=[
+            {
+                "topic": "t1",
+                "key": "k",
+                "value": {"step": 7},
+                "partition": 0,
+                "offset": 3,
+                "headers": [
+                    {"name": "trace", "value": "AAE="},
+                    {"name": "none", "value": None},
+                ],
+            }
+        ],
         content_type="application/vnd.kafka.json.v2+json",
     )
     consumer = RESTConsumer("g1", client=client, format="json")
-    assert consumer.fetch(timeout_ms=1000, max_bytes=500) == records
+    (record,) = consumer.fetch(timeout_ms=1000, max_bytes=500)
+    assert record["key"] == "k"
+    assert record["value"] == {"step": 7}
+    assert record["headers"] == [
+        {"name": "trace", "value": b"\x00\x01"},
+        {"name": "none", "value": None},
+    ]
     request = http.calls[1].request
     assert request.headers["Accept"] == "application/vnd.kafka.json.v2+json"
     assert "timeout=1000" in request.url
@@ -141,10 +181,6 @@ def test_fetch_json_sends_accept_and_returns_records_as_given(client, http):
 
 def test_fetch_binary_decodes_base64(client, http):
     created(http)
-
-    def b64(data):
-        return base64.b64encode(data).decode()
-
     http.get(
         f"{INSTANCE}/records",
         json=[
@@ -199,8 +235,7 @@ def test_fetch_recovers_a_subscribed_instance(client, http):
     consumer.subscribe(["t1", "t2"])
     assert consumer.fetch() == []
 
-    urls = [(c.request.method, c.request.url.split("?")[0]) for c in http.calls]
-    assert urls == [
+    assert routes(http) == [
         ("POST", CREATE_URL),
         ("POST", f"{INSTANCE}/subscription"),
         ("GET", f"{INSTANCE}/records"),
@@ -259,12 +294,7 @@ def test_no_recovery_when_disabled(client, http):
 )
 def test_other_errors_are_not_retried(client, http, status, code):
     created(http)
-    http.get(
-        f"{INSTANCE}/records",
-        status=status,
-        json={"error_code": code, "message": "refused"},
-        content_type=V2,
-    )
+    refused(http, "GET", f"{INSTANCE}/records", status, code)
     consumer = RESTConsumer("g1", client=client)
     with pytest.raises(WebAPIError) as info:
         consumer.fetch()
@@ -284,6 +314,47 @@ def test_commit_with_and_without_offsets(client, http):
     assert http.calls[1].request.body is None
     assert body(http.calls[2]) == {
         "offsets": [{"topic": "t1", "partition": 0, "offset": 41}]
+    }
+
+
+def test_commit_without_offsets_on_a_gone_instance_raises(client, http):
+    # The retried commit would commit the new instance's positions, which
+    # hold nothing, and answer 200 []: the commit would be lost silently.
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    gone(http, "POST", f"{INSTANCE}/offsets")
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    http.get(f"{INSTANCE}/records", json=[], content_type=V2)
+
+    consumer = RESTConsumer("g1", client=client)
+    consumer.subscribe(["t1"])
+    with pytest.raises(CommitLostError) as info:
+        consumer.commit()
+    assert isinstance(info.value, WebAPIError)
+    assert info.value.error_code == 40403
+    assert "nothing was committed" in str(info.value)
+    # recreated and subscribed again, and the commit not sent again
+    assert routes(http)[3:] == [
+        ("POST", CREATE_URL),
+        ("POST", f"{INSTANCE}/subscription"),
+    ]
+    consumer.fetch()  # the consumer stays usable
+    assert routes(http)[-1] == ("GET", f"{INSTANCE}/records")
+
+
+def test_commit_with_offsets_on_a_gone_instance_is_retried(client, http):
+    created(http)
+    http.post(f"{INSTANCE}/assignments", status=204)
+    gone(http, "POST", f"{INSTANCE}/offsets")
+    created(http)
+    http.post(f"{INSTANCE}/assignments", status=204)
+    http.post(f"{INSTANCE}/offsets", json=[], content_type=V2)
+    consumer = RESTConsumer("g1", client=client)
+    consumer.assign([("t1", 0)])
+    consumer.commit({("t1", 0): 9})
+    assert body(http.calls[-1]) == {
+        "offsets": [{"topic": "t1", "partition": 0, "offset": 9}]
     }
 
 
@@ -338,6 +409,180 @@ def test_unsubscribe_forgets_the_topics(client, http):
     assert [c.request.method for c in http.calls[-2:]] == ["POST", "GET"]
 
 
+def test_unsubscribe_forgets_the_assignment(client, http):
+    # The service's unsubscribe also drops an assignment, so recovery must
+    # not assign the partitions again before a later subscribe.
+    created(http)
+    http.post(f"{INSTANCE}/assignments", status=204)
+    http.delete(f"{INSTANCE}/subscription", status=204)
+    gone(http, "POST", f"{INSTANCE}/subscription")
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    consumer = RESTConsumer("g1", client=client)
+    consumer.assign([("t1", 0)])
+    consumer.unsubscribe()
+    consumer.subscribe(["t2"])
+    assert routes(http)[3:] == [
+        ("POST", f"{INSTANCE}/subscription"),
+        ("POST", CREATE_URL),
+        ("POST", f"{INSTANCE}/subscription"),
+    ]
+    assert body(http.calls[-1]) == {"topics": ["t2"]}
+
+
+@pytest.mark.parametrize(
+    ("call", "route"),
+    [
+        (lambda c: c.subscribe(["new"]), ("POST", "/subscription")),
+        (lambda c: c.assign([("new", 0)]), ("POST", "/assignments")),
+        (lambda c: c.unsubscribe(), ("DELETE", "/subscription")),
+    ],
+)
+def test_a_call_that_replaces_the_subscription_is_not_preceded_by_it(
+    client, http, call, route
+):
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    consumer = RESTConsumer("g1", client=client)
+    consumer.subscribe(["old"])
+    method, path = route
+    gone(http, method, f"{INSTANCE}{path}")
+    created(http)
+    http.add(method, f"{INSTANCE}{path}", status=204)
+    call(consumer)
+    # recreated, then the call alone: no subscribe to "old" first
+    assert routes(http)[2:] == [
+        (method, f"{INSTANCE}{path}"),
+        ("POST", CREATE_URL),
+        (method, f"{INSTANCE}{path}"),
+    ]
+
+
+def test_failed_resubscribe_is_tried_again_by_the_next_call(client, http):
+    created(http)
+    http.post(f"{INSTANCE}/subscription", status=204)
+    gone(http, "GET", f"{INSTANCE}/records")
+    created(http)
+    refused(http, "POST", f"{INSTANCE}/subscription", 503, 50302)
+    consumer = RESTConsumer("g1", client=client)
+    consumer.subscribe(["t1"])
+    with (
+        mock.patch("time.sleep"),
+        mock.patch.object(client.web_client.retry_config, "max_retries", 0),
+        pytest.raises(WebAPIError) as info,
+    ):
+        consumer.fetch()
+    assert info.value.error_code == 50302
+    http.replace("POST", f"{INSTANCE}/subscription", status=204)
+    http.get(f"{INSTANCE}/records", json=[], content_type=V2)
+    consumer.fetch()
+    assert routes(http)[-2:] == [
+        ("POST", f"{INSTANCE}/subscription"),
+        ("GET", f"{INSTANCE}/records"),
+    ]
+    assert body(http.calls[-2]) == {"topics": ["t1"]}
+
+
+def test_a_call_racing_close_does_not_recreate(client):
+    # The DELETE of close() lands before a fetch from another thread, which
+    # then finds the instance gone and must not create it again.
+    with responses.RequestsMock(assert_all_requests_are_fired=False) as http:
+        created(http)
+        consumer = RESTConsumer("g1", client=client)
+        deleting = threading.Event()
+
+        def fetch(request):
+            deleting.wait(5)
+            return (404, {"Content-Type": V2}, json.dumps(GONE))
+
+        def delete(request):
+            deleting.set()
+            time.sleep(0.2)  # the fetch's 404 arrives while closing
+            return (204, {}, "")
+
+        http.add_callback("GET", f"{INSTANCE}/records", callback=fetch)
+        http.add_callback("DELETE", INSTANCE, callback=delete)
+        errors = []
+
+        def run():
+            try:
+                consumer.fetch(timeout_ms=1)
+            except Exception as e:  # noqa: BLE001
+                errors.append(e)
+
+        thread = threading.Thread(target=run)
+        thread.start()
+        time.sleep(0.05)
+        consumer.close()
+        thread.join()
+        creates = [r for r in routes(http) if r == ("POST", CREATE_URL)]
+    assert consumer.closed
+    assert len(creates) == 1
+    assert len(errors) == 1
+    assert isinstance(errors[0], WebAPIError)
+    assert errors[0].error_code == 40403
+
+
+def test_two_threads_that_find_the_instance_gone_create_it_once(client):
+    with responses.RequestsMock() as http:
+        created(http)
+        consumer = RESTConsumer("g1", client=client)
+        both = threading.Barrier(2)
+        seen = {"subscription": 0, "assignments": 0}
+
+        def first_gone(route, payload):
+            def reply(request):
+                seen[route] += 1
+                if seen[route] == 1:
+                    both.wait(5)
+                    return (404, {"Content-Type": V2}, json.dumps(GONE))
+                return (200, {"Content-Type": V2}, json.dumps(payload))
+
+            return reply
+
+        http.add_callback(
+            "GET",
+            f"{INSTANCE}/subscription",
+            callback=first_gone("subscription", {"topics": []}),
+        )
+        http.add_callback(
+            "GET",
+            f"{INSTANCE}/assignments",
+            callback=first_gone("assignments", {"partitions": []}),
+        )
+        creates = []
+
+        def create(request):
+            creates.append(request)
+            if len(creates) > 1:
+                return (409, {"Content-Type": V2}, json.dumps({"error_code": 40902}))
+            return (
+                200,
+                {"Content-Type": V2},
+                json.dumps({"instance_id": "inst", "base_uri": INSTANCE}),
+            )
+
+        http.add_callback("POST", CREATE_URL, callback=create)
+        out = {}
+
+        def run(name, call):
+            try:
+                out[name] = call()
+            except Exception as e:  # noqa: BLE001
+                out[name] = e
+
+        threads = [
+            threading.Thread(target=run, args=("sub", consumer.subscription)),
+            threading.Thread(target=run, args=("asg", consumer.assignment)),
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+    assert out == {"sub": [], "asg": []}
+    assert len(creates) == 1
+
+
 def test_context_manager_deletes_the_instance(client, http):
     created(http)
     http.delete(INSTANCE, status=204)
@@ -351,6 +596,17 @@ def test_context_manager_deletes_the_instance(client, http):
         consumer.fetch()
 
 
+def test_a_failing_close_does_not_hide_the_with_blocks_error(client, http):
+    created(http)
+    refused(http, "DELETE", INSTANCE, 409, 40904)
+
+    class Stop(Exception):
+        pass
+
+    with pytest.raises(Stop), RESTConsumer("g1", client=client):
+        raise Stop
+
+
 def test_close_takes_a_gone_instance_as_deleted(client, http):
     created(http)
     gone(http, "DELETE", INSTANCE)
@@ -362,12 +618,7 @@ def test_close_takes_a_gone_instance_as_deleted(client, http):
 
 def test_close_raises_other_errors(client, http):
     created(http)
-    http.delete(
-        INSTANCE,
-        status=409,
-        json={"error_code": 40904, "message": "busy"},
-        content_type=V2,
-    )
+    refused(http, "DELETE", INSTANCE, 409, 40904)
     consumer = RESTConsumer("g1", client=client)
     with pytest.raises(WebAPIError):
         consumer.close()
