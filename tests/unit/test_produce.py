@@ -1,4 +1,6 @@
 import json
+import socket
+import threading
 from datetime import datetime, timedelta, timezone
 from unittest import mock
 
@@ -306,3 +308,94 @@ def test_other_calls_keep_globus_sdk_retries(client, http, no_sleep):
     http.post(url, json={"status": "success"})
     assert client.create_topic("t1") == {"status": "success"}
     assert len(http.calls) == 2
+
+
+def test_retry_rule_is_per_call_across_threads(client, http, no_sleep):
+    # A produce in one thread does not change another thread's retries.
+    http.post(RECORDS, status=500, json={"error_code": 50003})
+    http.get(f"{BASE}/api/v3/namespace", status=500, json={})
+    gate = threading.Barrier(2)
+
+    def call(fn):
+        gate.wait()
+        with pytest.raises(WebAPIError):
+            fn()
+
+    threads = [
+        threading.Thread(target=call, args=(lambda: client.produce("t1", 1),)),
+        threading.Thread(target=call, args=(client.list_namespaces,)),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    urls = [c.request.url for c in http.calls]
+    assert sum(u.endswith("/records") for u in urls) == 1
+    assert sum(u.endswith("/namespace") for u in urls) == 6  # 1 + 5 retries
+
+
+def local_client(port):
+    with (
+        mock.patch.object(Client, "_resolve_identity"),
+        mock.patch(
+            "diaspora_event_sdk.sdk.client.get_web_service_url",
+            return_value=f"http://127.0.0.1:{port}/",
+        ),
+    ):
+        c = Client(authorizer=globus_sdk.AccessTokenAuthorizer("token"))
+    c.subject_openid = SUBJECT
+    c.namespace = NS
+    return c
+
+
+def count_sends(c):
+    real = c.web_client.transport.session.send
+    sent = []
+
+    def send(*args, **kwargs):
+        sent.append(1)
+        return real(*args, **kwargs)
+
+    return sent, mock.patch.object(c.web_client.transport.session, "send", send)
+
+
+def test_a_refused_connection_is_retried(no_sleep):
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()  # nothing listens on the port
+    c = local_client(port)
+    sent, patch = count_sends(c)
+    with patch, pytest.raises(globus_sdk.NetworkError):
+        c.produce("t1", 1)
+    assert len(sent) == 6  # 1 + 5 retries
+
+
+def test_a_connection_closed_after_the_request_is_not_retried(no_sleep):
+    server = socket.socket()
+    server.bind(("127.0.0.1", 0))
+    server.listen(8)
+    server.settimeout(0.2)
+    stop = threading.Event()
+
+    def serve():
+        while not stop.is_set():
+            try:
+                conn, _ = server.accept()
+            except OSError:
+                continue
+            conn.recv(65536)  # read the request, then close without a reply
+            conn.close()
+
+    thread = threading.Thread(target=serve, daemon=True)
+    thread.start()
+    c = local_client(server.getsockname()[1])
+    sent, patch = count_sends(c)
+    try:
+        with patch, pytest.raises(globus_sdk.NetworkError):
+            c.produce("t1", 1)
+    finally:
+        stop.set()
+        thread.join()
+        server.close()
+    assert len(sent) == 1
