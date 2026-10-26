@@ -40,7 +40,7 @@ setup(
     description="Diaspora Event Fabric SDK",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_namespace_packages(),
+    packages=find_namespace_packages(include=["diaspora_event_sdk*"]),
     include_package_data=True,
     package_data={"diaspora_event_sdk": ["py.typed"]},
     python_requires=">=3.10",
